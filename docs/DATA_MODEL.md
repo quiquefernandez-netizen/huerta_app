@@ -206,6 +206,8 @@ Cargo extraordinario independiente de los gastos. Permite que una actuación se 
 | activa | BOOLEAN | Vigencia operativa |
 | notas | TEXT | Motivo o referencia |
 
+Las tarifas no se sobrescriben para alterar liquidaciones ya emitidas. Administración crea una nueva vigencia desde la fecha actual; la tarifa anterior conserva su final de vigencia y cada liquidación mantiene además el precio aplicado.
+
 ## Modelo de liquidación de agua
 
 Una pulsación de «Liquidar agua» crea un lote y una liquidación individual por familia dentro de la misma transacción. Cada importe es un cargo de la cuenta familiar y se compensa automáticamente con sus abonos.

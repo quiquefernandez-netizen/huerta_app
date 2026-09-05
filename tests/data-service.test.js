@@ -72,6 +72,16 @@ test("el servicio demo configura una única cuota anual activa sin cambiar aport
   assert.deepEqual(after.families.map((family) => family.contributedCents), before.families.map((family) => family.contributedCents));
 });
 
+test("el servicio demo versiona la tarifa de agua sin perder el histórico", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  await service.setWaterTariff({ validFrom: "2026-09-05", priceCentsPerM3: 214, notes: "Nueva tarifa ficticia" });
+  const after = await service.getSnapshot();
+  assert.equal(after.community.waterPriceCentsPerM3, 214);
+  assert.equal(after.waterTariffs.find((tariff) => tariff.validFrom === "2026-09-05").priceCentsPerM3, 214);
+  assert.ok(after.waterTariffs.length > before.waterTariffs.length);
+});
+
 test("el servicio demo liquida el agua y deja la nueva lectura como referencia", async () => {
   const service = new DemoDataService();
   const snapshot = await service.getSnapshot();

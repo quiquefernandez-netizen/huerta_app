@@ -35,6 +35,12 @@ function activeQuotaPlan() {
   return data.quotaPlans?.find((plan) => plan.active) ?? { year: new Date().getFullYear(), monthlyAmountCents: 0, annualAmountCents: 0, dueThroughMonth: 1 };
 }
 
+function currentWaterTariff() {
+  const today = todayIso();
+  return (data.waterTariffs ?? []).find((tariff) => tariff.active && tariff.validFrom <= today && (!tariff.validUntil || tariff.validUntil >= today))
+    ?? { validFrom: today, priceCentsPerM3: data.community.waterPriceCentsPerM3, notes: "" };
+}
+
 function expectedQuotaCents() {
   const plan = activeQuotaPlan();
   return calculateExpectedQuotaCents(plan.monthlyAmountCents, plan.dueThroughMonth);
@@ -256,13 +262,14 @@ function renderWater() {
   const settlementOrigin = data.lastWaterSettlement?.date
     ? `Desde la liquidación del ${formatDate(data.lastWaterSettlement.date)}.`
     : "Aún no existe una liquidación anterior; primero hay que preparar las lecturas de referencia.";
+  const tariff = currentWaterTariff();
 
   return `
     <p class="page-note">${latestDate ? `Última lectura ${formatDate(latestDate)}. ` : ""}${settlementOrigin}</p>
     <section class="water-summary">
       <article><span class="water-summary__icon">${icon("water")}</span><div><p>Consumo sin liquidar</p><strong>${formatDecimal(totalUsageM3)} m³</strong><small>${formatDecimal(totalUsageM3 * 1000, 0)} litros entre todas las familias</small></div></article>
       <article><span class="water-summary__icon water-summary__icon--coins">${icon("coins")}</span><div><p>Total a liquidar</p><strong>${formatMoney(totalCostCents)}</strong><small>Cada familia paga su propio consumo</small></div></article>
-      <article class="tariff-card"><div><p>Tarifa de demostración</p><strong>${formatMoney(data.community.waterPriceCentsPerM3)}<small>/ m³</small></strong></div><span>Histórico preparado</span></article>
+      <article class="tariff-card"><div><p>Tarifa actual</p><strong>${formatMoney(tariff.priceCentsPerM3)}<small>/ m³</small></strong></div><span>Desde ${formatDate(tariff.validFrom)}</span></article>
     </section>
     <section class="list-section">
       <div class="list-section__heading"><div><p class="section-kicker">Por familia</p><h3>Últimas lecturas</h3></div><span class="help-label">Toca una tarjeta para añadir la siguiente</span></div>
@@ -307,7 +314,7 @@ function renderTopbar(route) {
     const readings = latestWaterReadings();
     const settlement = waterSettlementState().preview;
     const canSettle = isAdministrator() && settlement && settlement.totalUsageM3 > 0;
-    actions = `${readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
+    actions = `${isAdministrator() ? `<button class="secondary-button" type="button" data-open-water-tariff aria-label="Configurar tarifa de agua">${icon("settings")}<span class="action-label">Tarifa</span></button>` : ""}${readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
   }
   document.querySelector("#page-title").textContent = route.label;
   document.querySelector("#page-context").textContent = contexts[route.id] ?? "Sección de la comunidad";
@@ -428,6 +435,20 @@ function openQuotaDialog() {
       <div class="quota-calculation"><span>Cuota anual</span><strong data-annual-quota>${formatMoney(plan.annualAmountCents)}</strong><small>12 mensualidades. Cada año conserva su propia configuración.</small></div>
       <p class="form-error" role="alert" hidden></p>
       <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar demo</button></div>
+    </form>`);
+}
+
+function openWaterTariffDialog() {
+  const tariff = currentWaterTariff();
+  const saveLabel = authService ? "Guardar tarifa" : "Guardar demo";
+  openDialog(`${dialogHeader("Configuración de agua", "Tarifa por m³")}
+    <form class="dialog-form" id="water-tariff-form">
+      <p class="form-help">La nueva tarifa se aplica desde hoy. Las liquidaciones ya emitidas conservan siempre su precio original.</p>
+      <div class="form-row"><label>Vigente desde<input name="validFrom" required type="date" value="${todayIso()}" readonly></label><label>Precio por m³ (€)<input name="price" required inputmode="decimal" value="${formatMoney(tariff.priceCentsPerM3).replace(" €", "")}"></label></div>
+      <label>Nota del cambio <textarea name="notes" maxlength="300" rows="3" placeholder="Opcional, por ejemplo: nueva tarifa de suministro"></textarea></label>
+      <div class="quota-calculation"><span>Tarifa anterior</span><strong>${formatMoney(tariff.priceCentsPerM3)} / m³</strong><small>Vigente desde ${formatDate(tariff.validFrom)}. El histórico queda conservado.</small></div>
+      <p class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">${saveLabel}</button></div>
     </form>`);
 }
 
@@ -721,6 +742,39 @@ function bindDialogInteractions() {
     }
   });
 
+  dialog.querySelector("#water-tariff-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const priceCentsPerM3 = parseEuroInput(form.get("price"));
+    const error = formElement.querySelector(".form-error");
+    if (!Number.isInteger(priceCentsPerM3) || priceCentsPerM3 < 0) {
+      error.textContent = "Escribe un precio válido, en euros por m³.";
+      error.hidden = false;
+      return;
+    }
+    const submitButton = formElement.querySelector("button[type='submit']");
+    submitButton.disabled = true;
+    submitButton.textContent = "Guardando…";
+    try {
+      const tariff = await service.setWaterTariff({ validFrom: form.get("validFrom"), priceCentsPerM3, notes: form.get("notes").trim() });
+      const existingIndex = data.waterTariffs.findIndex((item) => item.validFrom === tariff.validFrom);
+      if (existingIndex >= 0) data.waterTariffs[existingIndex] = tariff;
+      else data.waterTariffs.push(tariff);
+      data.waterTariffs.sort((a, b) => b.validFrom.localeCompare(a.validFrom));
+      data.community.waterPriceCentsPerM3 = tariff.priceCentsPerM3;
+      dialog.close();
+      renderRoute();
+      showToast(authService ? "Tarifa de agua actualizada. El histórico queda protegido." : "Tarifa de demostración actualizada.");
+    } catch (saveError) {
+      console.error(saveError);
+      error.textContent = "No hemos podido actualizar la tarifa. Comprueba los datos y vuelve a intentarlo.";
+      error.hidden = false;
+      submitButton.disabled = false;
+      submitButton.textContent = authService ? "Guardar tarifa" : "Guardar demo";
+    }
+  });
+
   dialog.querySelector("[data-confirm-water-settlement]")?.addEventListener("click", async (event) => {
     const button = event.currentTarget;
     const error = dialog.querySelector(".form-error");
@@ -896,6 +950,7 @@ function bindInteractions() {
   document.querySelectorAll("[data-family-id]").forEach((button) => button.addEventListener("click", () => openFamilyDialog(button.dataset.familyId)));
   document.querySelector("[data-demo-add='familia']")?.addEventListener("click", openFamilyCreateDialog);
   document.querySelector("[data-open-quota]")?.addEventListener("click", openQuotaDialog);
+  document.querySelector("[data-open-water-tariff]")?.addEventListener("click", openWaterTariffDialog);
   document.querySelector("[data-open-expense]")?.addEventListener("click", openExpenseDialog);
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
   document.querySelector("[data-open-water]")?.addEventListener("click", () => openWaterDialog());

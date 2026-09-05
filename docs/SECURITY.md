@@ -14,7 +14,7 @@ La comunidad tendrá dos perfiles de acceso: Normal con contraseña compartida y
 | Crear una derrama y elegir participantes | Sí | Sí |
 | Registrar una lectura de agua | Sí | Sí |
 | Confirmar una liquidación de agua | No | Sí |
-| Crear familias y configurar cuotas | No | Sí |
+| Crear familias, configurar cuotas y cambiar la tarifa de agua | No | Sí |
 | Editar o eliminar registros | No | Sí, con confirmación |
 | Gestionar credenciales administrativas | No | Próxima mejora segura |
 

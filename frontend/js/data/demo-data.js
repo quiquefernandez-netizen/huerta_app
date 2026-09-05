@@ -22,6 +22,9 @@ export const demoData = Object.freeze({
   quotaPlans: [
     { id: "plan_2026", year: 2026, monthlyAmountCents: 2000, annualAmountCents: 24000, dueThroughMonth: 9, active: true }
   ],
+  waterTariffs: [
+    { id: "tariff_2026", validFrom: "2026-01-01", validUntil: null, priceCentsPerM3: 185, active: true, notes: "Tarifa ficticia de demostración." }
+  ],
   families: [
     { id: "fam_roble", name: "Familia Roble", shortName: "Roble", members: 3, active: true, joinedAt: "2024-01-01", quotaCents: 24000, contributedCents: 18000, notes: "" },
     { id: "fam_olivo", name: "Familia Olivo", shortName: "Olivo", members: 2, active: true, joinedAt: "2024-01-01", quotaCents: 24000, contributedCents: 18000, notes: "" },

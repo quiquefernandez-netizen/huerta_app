@@ -68,6 +68,17 @@ export class DemoDataService {
     return clone(created);
   }
 
+  async setWaterTariff(tariff) {
+    await delay(240);
+    const created = { ...clone(tariff), id: tariff.id ?? `tariff_demo_${tariff.validFrom}`, active: true };
+    const existingIndex = this.data.waterTariffs.findIndex((item) => item.validFrom === created.validFrom);
+    if (existingIndex >= 0) this.data.waterTariffs[existingIndex] = created;
+    else this.data.waterTariffs.push(created);
+    this.data.waterTariffs.sort((a, b) => b.validFrom.localeCompare(a.validFrom));
+    this.data.community.waterPriceCentsPerM3 = created.priceCentsPerM3;
+    return clone(created);
+  }
+
   async createWaterSettlement(settlement) {
     await delay(320);
     const created = { ...clone(settlement), id: `liq_demo_${crypto.randomUUID()}`, status: "EMITIDA" };
@@ -173,6 +184,14 @@ export class SupabaseDataService {
     return this.rpc("set_quota_plan", {
       p_year: plan.year,
       p_monthly_amount_cents: plan.monthlyAmountCents
+    });
+  }
+
+  setWaterTariff(tariff) {
+    return this.rpc("set_water_tariff", {
+      p_valid_from: tariff.validFrom,
+      p_price_cents_m3: tariff.priceCentsPerM3,
+      p_notes: tariff.notes ?? ""
     });
   }
 

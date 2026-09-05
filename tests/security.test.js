@@ -6,6 +6,7 @@ const authMigrationUrl = new URL("../supabase/migrations/002_auth_and_rls.sql", 
 const rpcMigrationUrl = new URL("../supabase/migrations/007_supabase_access_contracts.sql", import.meta.url);
 const sharedRecordingMigrationUrl = new URL("../supabase/migrations/011_allow_shared_recording.sql", import.meta.url);
 const adminMutationMigrationUrl = new URL("../supabase/migrations/012_restore_admin_mutation_privileges.sql", import.meta.url);
+const waterTariffMigrationUrl = new URL("../supabase/migrations/013_admin_water_tariff.sql", import.meta.url);
 const auditMigrationUrl = new URL("../supabase/migrations/004_phase1_audit.sql", import.meta.url);
 const quotaMigrationUrl = new URL("../supabase/migrations/005_quota_and_water_settlement_batches.sql", import.meta.url);
 const accountsMigrationUrl = new URL("../supabase/migrations/006_family_accounts_expenses_and_assessments.sql", import.meta.url);
@@ -70,6 +71,17 @@ test("las operaciones sensibles son de administración y las altas compartidas s
   }
   assert.match(sharedRecordingSql, /revoke insert, update, delete on table[\s\S]*public\.aportaciones/);
   assert.match(adminMutationSql, /grant update, delete on table[\s\S]*public\.aportaciones/);
+});
+
+test("la tarifa de agua solo puede cambiarla administración y conserva vigencias", async () => {
+  const sql = await readFile(waterTariffMigrationUrl, "utf8");
+  const block = sql.match(/create or replace function public\.set_water_tariff[\s\S]*?\n\$\$;/i)?.[0] ?? "";
+  assert.match(block, /current_user_is_admin/);
+  assert.match(block, /p_valid_from is distinct from current_date/);
+  assert.match(sql, /applied_price_cents_m3/);
+  assert.match(sql, /'waterTariffs'/);
+  assert.match(sql, /create trigger audit_tarifas_agua_changes/i);
+  assert.match(sql, /revoke all on function public\.set_water_tariff\(date, integer, text\) from public, anon/i);
 });
 
 test("la Edge Function verifica el JWT y usa la clave de servidor solo en backend", async () => {
