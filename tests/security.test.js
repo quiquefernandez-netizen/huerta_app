@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 const authMigrationUrl = new URL("../supabase/migrations/002_auth_and_rls.sql", import.meta.url);
 const rpcMigrationUrl = new URL("../supabase/migrations/007_supabase_access_contracts.sql", import.meta.url);
 const sharedRecordingMigrationUrl = new URL("../supabase/migrations/011_allow_shared_recording.sql", import.meta.url);
+const adminMutationMigrationUrl = new URL("../supabase/migrations/012_restore_admin_mutation_privileges.sql", import.meta.url);
 const auditMigrationUrl = new URL("../supabase/migrations/004_phase1_audit.sql", import.meta.url);
 const quotaMigrationUrl = new URL("../supabase/migrations/005_quota_and_water_settlement_batches.sql", import.meta.url);
 const accountsMigrationUrl = new URL("../supabase/migrations/006_family_accounts_expenses_and_assessments.sql", import.meta.url);
@@ -53,6 +54,7 @@ test("las operaciones sensibles son de administración y las altas compartidas s
   const authSql = await readFile(authMigrationUrl, "utf8");
   const rpcSql = await readFile(rpcMigrationUrl, "utf8");
   const sharedRecordingSql = await readFile(sharedRecordingMigrationUrl, "utf8");
+  const adminMutationSql = await readFile(adminMutationMigrationUrl, "utf8");
   for (const policy of ["familias_admin_write", "gastos_admin_write", "cuotas_admin_write", "lecturas_admin_write", "liquidaciones_admin_write"]) {
     const block = authSql.match(new RegExp(`create policy ${policy}[\\s\\S]*?with check \\([\\s\\S]*?\\);`, "i"))?.[0] ?? "";
     assert.match(block, /current_user_is_admin/);
@@ -67,6 +69,7 @@ test("las operaciones sensibles son de administración y las altas compartidas s
     assert.match(block, /current_user_is_active/);
   }
   assert.match(sharedRecordingSql, /revoke insert, update, delete on table[\s\S]*public\.aportaciones/);
+  assert.match(adminMutationSql, /grant update, delete on table[\s\S]*public\.aportaciones/);
 });
 
 test("la Edge Function verifica el JWT y usa la clave de servidor solo en backend", async () => {
