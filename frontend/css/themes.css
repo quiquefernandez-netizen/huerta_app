@@ -184,7 +184,7 @@
 }
 
 :root[data-theme="aero"] .summary-card:nth-child(-n + 2) strong {
-  font-size: clamp(1.15rem, 1.7vw, 1.65rem);
+  font-size: clamp(1.05rem, 1.35vw, 1.4rem);
   white-space: normal;
 }
 

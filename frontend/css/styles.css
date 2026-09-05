@@ -77,7 +77,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .summary-card:not(.summary-card--balance) .summary-card__icon--clay { background: var(--clay-soft); color: #984b37; }
 .summary-card p { margin: 1px 0 6px; overflow-wrap: anywhere; color: var(--muted); font-size: .85rem; font-weight: 700; }
 .summary-card--balance p { color: rgba(255,255,255,.72); }
-.summary-card strong { display: block; overflow-wrap: anywhere; font-family: var(--font-display); font-size: clamp(1.15rem, 1.7vw, 1.65rem); line-height: 1.1; letter-spacing: -.025em; }
+.summary-card strong { display: block; max-inline-size: 100%; overflow-wrap: anywhere; word-break: break-all; font-family: var(--font-display); font-size: clamp(1.05rem, 1.35vw, 1.4rem); line-height: 1.1; letter-spacing: -.025em; }
 .summary-card small { display: block; margin-top: 11px; color: var(--muted); font-size: .75rem; }
 .summary-card--balance small { color: rgba(255,255,255,.7); }
 .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr); gap: 18px; margin-top: 18px; }

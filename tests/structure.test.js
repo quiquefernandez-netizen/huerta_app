@@ -61,6 +61,7 @@ test("los importes de resumen se adaptan a cifras grandes sin salir de la tarjet
   const themes = await readFile(new URL("../frontend/css/themes.css", import.meta.url), "utf8");
   assert.match(styles, /\.summary-card > div\s*\{[^}]*min-width:\s*0[^}]*flex:\s*1/);
   assert.match(styles, /\.summary-card strong\s*\{[^}]*overflow-wrap:\s*anywhere/);
+  assert.match(styles, /\.summary-card strong\s*\{[^}]*word-break:\s*break-all/);
   assert.match(themes, /\.summary-card:nth-child\(-n \+ 2\) strong\s*\{[^}]*white-space:\s*normal/);
 });
 
