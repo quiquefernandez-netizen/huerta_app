@@ -265,19 +265,21 @@ function renderWater() {
       <article class="tariff-card"><div><p>Tarifa de demostración</p><strong>${formatMoney(data.community.waterPriceCentsPerM3)}<small>/ m³</small></strong></div><span>Histórico preparado</span></article>
     </section>
     <section class="list-section">
-      <div class="list-section__heading"><div><p class="section-kicker">Por familia</p><h3>Últimas lecturas</h3></div><span class="help-label">Toca una tarjeta para añadir la siguiente</span></div>
+      <div class="list-section__heading"><div><p class="section-kicker">Por familia</p><h3>Últimas lecturas</h3></div>${isAdministrator() ? `<span class="help-label">Toca una tarjeta para añadir la siguiente</span>` : ""}</div>
       <div class="water-family-grid">${readings.length ? readings.map(({ family, reading }) => {
         const item = settlementByFamily.get(family.id);
         const usage = item?.usageM3 ?? 0;
         const cost = item?.amountCents ?? 0;
-        return `<button class="water-family-card" type="button" data-water-family="${escapeHtml(family.id)}">
+        const cardTag = isAdministrator() ? "button" : "article";
+        const interaction = isAdministrator() ? ` type="button" data-water-family="${escapeHtml(family.id)}"` : "";
+        return `<${cardTag} class="water-family-card"${interaction}>
           <span class="family-avatar" aria-hidden="true">${escapeHtml(familyMonogram(family))}</span>
           <span class="water-family-card__name"><strong>${escapeHtml(family.name)}</strong><small>Contador ${escapeHtml(reading.meterId.replace("con_", "").toUpperCase())}</small></span>
           <span class="reading-pair"><small>Lectura actual</small><strong>${formatDecimal(reading.readingM3)} m³</strong></span>
           <span class="usage-pill"><small>Consumo</small><strong>${formatDecimal(usage)} m³</strong></span>
           <span class="reading-cost"><small>Importe</small><strong>${formatMoney(cost)}</strong></span>
-          ${icon("arrow")}
-        </button>`;
+          ${isAdministrator() ? icon("arrow") : ""}
+        </${cardTag}>`;
       }).join("") : `<div class="empty-list"><strong>Aún no hay lecturas de agua.</strong><span>Administración debe preparar primero los contadores.</span></div>`}</div>
     </section>
     ${settlementState.error ? `<aside class="info-note info-note--warning">${icon("water")}<p><strong>Aún no se puede liquidar.</strong> ${escapeHtml(settlementState.error)}</p></aside>` : ""}

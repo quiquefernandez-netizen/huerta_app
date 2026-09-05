@@ -51,6 +51,7 @@ test("la interfaz oculta administración y altas al perfil normal", async () => 
   assert.match(source, /route\.id !== "administracion" \|\| isAdministrator\(\)/);
   assert.match(source, /isAdministrator\(\) && route\.id === "gastos"[\s\S]*?data-open-expense/);
   assert.match(source, /isAdministrator\(\) && readings\.length \? `<button class="secondary-button" type="button" data-open-water/);
+  assert.match(source, /const cardTag = isAdministrator\(\) \? "button" : "article"/);
   assert.match(source, /profileButton\.querySelector\("small"\)\.textContent = isAdministrator\(\) \? "Administrador" : "Perfil normal"/);
 });
 
