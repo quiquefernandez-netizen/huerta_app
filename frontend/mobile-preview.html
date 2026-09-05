@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Vista móvil · Comunidad</title>
+    <link rel="stylesheet" href="./css/mobile-preview.css">
+  </head>
+  <body>
+    <header class="review-bar">
+      <div>
+        <strong>Vista móvil</strong>
+        <span data-size-label>390 × 844 px</span>
+      </div>
+      <nav aria-label="Resolución de la vista previa">
+        <button class="is-active" type="button" data-width="390" data-height="844">390 × 844</button>
+        <button type="button" data-width="360" data-height="800">360 × 800</button>
+      </nav>
+      <a href="./index.html#inicio">Abrir escritorio</a>
+    </header>
+
+    <main class="preview-stage">
+      <section class="device-frame" data-device aria-label="Vista previa de un teléfono de 390 por 844 píxeles">
+        <span class="device-frame__speaker" aria-hidden="true"></span>
+        <iframe title="Aplicación en resolución móvil" src="./index.html#inicio"></iframe>
+      </section>
+    </main>
+
+    <script>
+      const device = document.querySelector("[data-device]");
+      const label = document.querySelector("[data-size-label]");
+      document.querySelectorAll("[data-width]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const { width, height } = button.dataset;
+          device.style.setProperty("--device-width", `${width}px`);
+          device.style.setProperty("--device-height", `${height}px`);
+          device.setAttribute("aria-label", `Vista previa de un teléfono de ${width} por ${height} píxeles`);
+          label.textContent = `${width} × ${height} px`;
+          document.querySelectorAll("[data-width]").forEach((item) => item.classList.toggle("is-active", item === button));
+        });
+      });
+    </script>
+  </body>
+</html>

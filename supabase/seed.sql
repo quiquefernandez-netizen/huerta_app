@@ -1,0 +1,115 @@
+-- Datos exclusivamente ficticios para probar la Fase 1 en Supabase.
+-- Es idempotente y no crea credenciales ni contraseñas.
+
+insert into public.config (key, value, description) values
+  ('community_name', '"Comunidad Demo"'::jsonb, 'Nombre ficticio de la comunidad')
+on conflict (key) do update set value = excluded.value;
+
+insert into public.categorias (id, name, type, color, display_order) values
+  ('20000000-0000-4000-8000-000000000001', 'Agua general', 'GASTO', '#3f7f8b', 1),
+  ('20000000-0000-4000-8000-000000000002', 'Electricidad', 'GASTO', '#d69c45', 2),
+  ('20000000-0000-4000-8000-000000000003', 'Mantenimiento', 'GASTO', '#648a72', 3),
+  ('20000000-0000-4000-8000-000000000004', 'Reparaciones', 'GASTO', '#bd654d', 4),
+  ('20000000-0000-4000-8000-000000000005', 'Material', 'GASTO', '#8c7f72', 5),
+  ('20000000-0000-4000-8000-000000000006', 'Otros', 'GASTO', '#748078', 6),
+  ('20000000-0000-4000-8000-000000000007', 'Impuestos / tasas', 'GASTO', '#7b6f94', 7)
+on conflict (id) do update set name = excluded.name, color = excluded.color, display_order = excluded.display_order, active = true;
+
+insert into public.familias (id, name, short_name, members, joined_at, notes) values
+  ('10000000-0000-4000-8000-000000000001', 'Familia Roble', 'Roble', 3, '2024-01-01', null),
+  ('10000000-0000-4000-8000-000000000002', 'Familia Olivo', 'Olivo', 2, '2024-01-01', null),
+  ('10000000-0000-4000-8000-000000000003', 'Familia Pino', 'Pino', 4, '2024-01-01', 'Datos ficticios para probar pagos parciales.'),
+  ('10000000-0000-4000-8000-000000000004', 'Familia Encina', 'Encina', 2, '2024-01-01', null),
+  ('10000000-0000-4000-8000-000000000005', 'Familia Almendro', 'Almendro', 3, '2024-01-01', null)
+on conflict (id) do update set name = excluded.name, short_name = excluded.short_name, members = excluded.members, active = true;
+
+insert into public.planes_cuota (id, year, monthly_amount_cents, annual_amount_cents, active) values
+  ('30000000-0000-4000-8000-000000000001', 2026, 2000, 24000, true)
+on conflict (year) do update set monthly_amount_cents = 2000, annual_amount_cents = 24000, active = true;
+
+insert into public.cuotas (family_id, quota_plan_id, type, concept, period_start, period_end, amount_cents, due_date, status)
+select family.id, plan.id, 'MENSUAL', 'Cuota mensual demo', make_date(2026, month_number, 1),
+  (make_date(2026, month_number, 1) + interval '1 month - 1 day')::date, 2000,
+  (make_date(2026, month_number, 1) + interval '1 month - 1 day')::date, 'PENDIENTE'
+from public.familias family
+cross join public.planes_cuota plan
+cross join generate_series(1, 12) month_number
+where plan.year = 2026 and family.id::text like '10000000-%'
+on conflict (family_id, quota_plan_id, period_start) where quota_plan_id is not null do nothing;
+
+insert into public.aportaciones (id, family_id, received_at, amount_cents, type, concept)
+select md5(family.id::text || month_number::text)::uuid, family.id,
+  make_date(2026, month_number, 5), 2000, 'ORDINARIA', 'Aportación mensual demo'
+from public.familias family cross join generate_series(1, 8) month_number
+where family.id::text like '10000000-%'
+on conflict (id) do nothing;
+
+insert into public.aportaciones (id, family_id, received_at, amount_cents, type, concept) values
+  ('70000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '2026-09-05', 2000, 'ORDINARIA', 'Aportación septiembre demo'),
+  ('70000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', '2026-09-05', 2000, 'ORDINARIA', 'Aportación septiembre demo'),
+  ('70000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000004', '2026-09-05', 2000, 'ORDINARIA', 'Aportación septiembre demo'),
+  ('70000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000005', '2026-09-05', 4000, 'EXTRAORDINARIA', 'Aportación adelantada demo')
+on conflict (id) do nothing;
+
+insert into public.tarifas_agua (id, valid_from, price_cents_m3, active, notes) values
+  ('40000000-0000-4000-8000-000000000001', '2025-01-01', 185, true, 'Tarifa exclusivamente ficticia')
+on conflict (id) do update set price_cents_m3 = excluded.price_cents_m3, active = true;
+
+insert into public.contadores (id, family_id, code, installed_at, initial_reading_m3) values
+  ('50000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'DEMO-R01', '2024-01-01', 20.000),
+  ('50000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 'DEMO-O01', '2024-01-01', 30.000),
+  ('50000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', 'DEMO-P01', '2024-01-01', 40.000),
+  ('50000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000004', 'DEMO-E01', '2024-01-01', 18.000),
+  ('50000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000005', 'DEMO-A01', '2024-01-01', 25.000)
+on conflict (id) do update set code = excluded.code, active = true;
+
+insert into public.lecturas_agua (id, family_id, meter_id, read_at, reading_m3) values
+  ('60000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000001', '2025-01-01', 28.000),
+  ('60000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', '50000000-0000-4000-8000-000000000002', '2025-01-01', 39.000),
+  ('60000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', '50000000-0000-4000-8000-000000000003', '2025-01-01', 50.000),
+  ('60000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000004', '50000000-0000-4000-8000-000000000004', '2025-01-01', 22.000),
+  ('60000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000005', '50000000-0000-4000-8000-000000000005', '2025-01-01', 31.000),
+  ('61000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000001', '2025-12-31', 31.500),
+  ('61000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', '50000000-0000-4000-8000-000000000002', '2025-12-31', 44.100),
+  ('61000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', '50000000-0000-4000-8000-000000000003', '2025-12-31', 56.600),
+  ('61000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000004', '50000000-0000-4000-8000-000000000004', '2025-12-31', 26.400),
+  ('61000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000005', '50000000-0000-4000-8000-000000000005', '2025-12-31', 37.600),
+  ('62000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000001', '2026-08-31', 35.200),
+  ('62000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', '50000000-0000-4000-8000-000000000002', '2026-08-31', 48.800),
+  ('62000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', '50000000-0000-4000-8000-000000000003', '2026-08-31', 63.400),
+  ('62000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000004', '50000000-0000-4000-8000-000000000004', '2026-08-31', 29.900),
+  ('62000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000005', '50000000-0000-4000-8000-000000000005', '2026-08-31', 41.700)
+on conflict (id) do nothing;
+
+insert into public.lotes_liquidacion_agua (id, period_start, period_end, tariff_id, total_consumption_m3, total_amount_cents, status) values
+  ('80000000-0000-4000-8000-000000000001', '2025-01-01', '2025-12-31', '40000000-0000-4000-8000-000000000001', 26.200, 4847, 'EMITIDA')
+on conflict (id) do nothing;
+
+insert into public.liquidaciones_agua (id, family_id, meter_id, previous_reading_id, current_reading_id,
+  consumption_m3, tariff_id, applied_price_cents_m3, amount_cents, status, settlement_batch_id) values
+  ('81000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000001', '60000000-0000-4000-8000-000000000001', '61000000-0000-4000-8000-000000000001', 3.500, '40000000-0000-4000-8000-000000000001', 185, 648, 'PAGADA', '80000000-0000-4000-8000-000000000001'),
+  ('81000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', '50000000-0000-4000-8000-000000000002', '60000000-0000-4000-8000-000000000002', '61000000-0000-4000-8000-000000000002', 5.100, '40000000-0000-4000-8000-000000000001', 185, 944, 'PAGADA', '80000000-0000-4000-8000-000000000001'),
+  ('81000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000003', '50000000-0000-4000-8000-000000000003', '60000000-0000-4000-8000-000000000003', '61000000-0000-4000-8000-000000000003', 6.600, '40000000-0000-4000-8000-000000000001', 185, 1221, 'PAGADA', '80000000-0000-4000-8000-000000000001'),
+  ('81000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000004', '50000000-0000-4000-8000-000000000004', '60000000-0000-4000-8000-000000000004', '61000000-0000-4000-8000-000000000004', 4.400, '40000000-0000-4000-8000-000000000001', 185, 814, 'PAGADA', '80000000-0000-4000-8000-000000000001'),
+  ('81000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000005', '50000000-0000-4000-8000-000000000005', '60000000-0000-4000-8000-000000000005', '61000000-0000-4000-8000-000000000005', 6.600, '40000000-0000-4000-8000-000000000001', 185, 1220, 'PAGADA', '80000000-0000-4000-8000-000000000001')
+on conflict (id) do nothing;
+
+insert into public.gastos (id, spent_at, concept, amount_cents, category_id, provider, payment_source) values
+  ('90000000-0000-4000-8000-000000000001', '2026-08-28', 'Revisión eléctrica demo', 18327, '20000000-0000-4000-8000-000000000002', 'Servicios Demo', 'COMMUNITY'),
+  ('90000000-0000-4000-8000-000000000002', '2026-08-12', 'Reparación de bomba demo', 24650, '20000000-0000-4000-8000-000000000004', 'Técnico Demo', 'FAMILIES'),
+  ('90000000-0000-4000-8000-000000000003', '2026-07-30', 'Factura de agua demo', 11980, '20000000-0000-4000-8000-000000000001', 'Aguas Demo', 'COMMUNITY')
+on conflict (id) do nothing;
+
+insert into public.gasto_pagadores (id, expense_id, family_id, amount_cents) values
+  ('91000000-0000-4000-8000-000000000001', '90000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', 15000),
+  ('91000000-0000-4000-8000-000000000002', '90000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 9650)
+on conflict (id) do nothing;
+
+insert into public.derramas (id, assessed_at, concept, total_amount_cents, status, notes) values
+  ('a0000000-0000-4000-8000-000000000001', '2026-07-15', 'Mejora del cierre exterior demo', 30000, 'ACTIVA', 'Derrama ficticia para tres familias.')
+on conflict (id) do nothing;
+insert into public.derrama_familias (id, assessment_id, family_id, amount_cents) values
+  ('a1000000-0000-4000-8000-000000000001', 'a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 10000),
+  ('a1000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000003', 10000),
+  ('a1000000-0000-4000-8000-000000000003', 'a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000005', 10000)
+on conflict (id) do nothing;

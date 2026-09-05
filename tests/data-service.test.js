@@ -1,0 +1,164 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { DemoDataService, SupabaseDataService } from "../frontend/js/services/data-service.js";
+
+test("el servicio demo añade familias con cuota pendiente y sin datos personales", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const created = await service.createFamily({ name: "Familia Naranjo", shortName: "Naranjo", members: 2, joinedAt: "2026-09-05", quotaCents: 60000, notes: "" });
+  const after = await service.getSnapshot();
+
+  assert.match(created.id, /^fam_demo_/);
+  assert.equal(created.contributedCents, 0);
+  assert.equal(after.families.length, before.families.length + 1);
+  assert.equal(after.community.activeFamilyCount, before.community.activeFamilyCount + 1);
+});
+
+test("el servicio demo conserva altas sin modificar los datos fuente", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const expense = await service.createExpense({
+    date: "2026-09-05",
+    concept: "Reparación ficticia",
+    amountCents: 1234,
+    category: "Reparaciones",
+    provider: "Proveedor Demo",
+    paymentSource: "COMMUNITY",
+    payers: [],
+    notes: ""
+  });
+  const after = await service.getSnapshot();
+
+  assert.match(expense.id, /^gas_demo_/);
+  assert.equal(after.expenses.length, before.expenses.length + 1);
+  assert.equal(after.expenses[0].amountCents, 1234);
+  assert.equal(after.community.currentBalanceCents, before.community.currentBalanceCents - 1234);
+  assert.equal(after.community.yearlyExpensesCents, before.community.yearlyExpensesCents + 1234);
+  before.expenses.length = 0;
+  assert.ok((await service.getSnapshot()).expenses.length > 0);
+});
+
+test("el servicio demo conserva nuevas lecturas acumuladas", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const latest = before.waterReadings[0];
+  const created = await service.createWaterReading({ ...latest, date: "2026-09-05", readingM3: 36, previousReadingM3: latest.readingM3 });
+  const after = await service.getSnapshot();
+
+  assert.match(created.id, /^lec_demo_/);
+  assert.equal(after.waterReadings.length, before.waterReadings.length + 1);
+  assert.equal(after.waterReadings.at(-1).previousReadingM3, latest.readingM3);
+});
+
+test("el servicio demo registra aportaciones y actualiza los totales", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const familyBefore = before.families.find((family) => family.id === "fam_pino").contributedCents;
+  const created = await service.createContribution({ familyId: "fam_pino", date: "2026-09-05", amountCents: 2000, concept: "Aportación mensual" });
+  const after = await service.getSnapshot();
+  assert.match(created.id, /^apo_demo_/);
+  assert.equal(after.families.find((family) => family.id === "fam_pino").contributedCents, familyBefore + 2000);
+  assert.equal(after.community.yearlyIncomeCents, before.community.yearlyIncomeCents + 2000);
+});
+
+test("el servicio demo configura una única cuota anual activa sin cambiar aportaciones", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  await service.setQuotaPlan({ year: 2027, monthlyAmountCents: 2500, annualAmountCents: 30000, dueThroughMonth: 1 });
+  const after = await service.getSnapshot();
+  assert.equal(after.quotaPlans.find((plan) => plan.year === 2027).annualAmountCents, 30000);
+  assert.deepEqual(after.quotaPlans.filter((plan) => plan.active).map((plan) => plan.year), [2027]);
+  assert.ok(after.families.every((family) => family.quotaCents === 30000));
+  assert.deepEqual(after.families.map((family) => family.contributedCents), before.families.map((family) => family.contributedCents));
+});
+
+test("el servicio demo liquida el agua y deja la nueva lectura como referencia", async () => {
+  const service = new DemoDataService();
+  const snapshot = await service.getSnapshot();
+  const items = snapshot.families.map((family) => {
+    const latest = snapshot.waterReadings.find((reading) => reading.familyId === family.id);
+    const previous = snapshot.lastWaterSettlement.settledReadings.find((reading) => reading.familyId === family.id);
+    return { familyId: family.id, meterId: latest.meterId, currentReadingM3: latest.readingM3, amountCents: 100, usageM3: latest.readingM3 - previous.readingM3 };
+  });
+  const created = await service.createWaterSettlement({ periodStart: "2025-12-31", periodEnd: "2026-08-31", items, totalAmountCents: 500 });
+  const after = await service.getSnapshot();
+  assert.match(created.id, /^liq_demo_/);
+  assert.equal(after.lastWaterSettlement.date, "2026-08-31");
+  assert.equal(after.waterSettlements.length, snapshot.waterSettlements.length + 1);
+});
+
+test("un gasto adelantado por familias no reduce el saldo bancario", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const created = await service.createExpense({ date: "2026-09-05", concept: "Trabajo demo", amountCents: 5000, category: "Reparaciones", provider: "Demo", paymentSource: "FAMILIES", payers: [{ familyId: "fam_roble", amountCents: 3000 }, { familyId: "fam_olivo", amountCents: 2000 }], notes: "" });
+  const after = await service.getSnapshot();
+  assert.equal(created.payers.length, 2);
+  assert.equal(after.community.currentBalanceCents, before.community.currentBalanceCents);
+  assert.equal(after.community.yearlyExpensesCents, before.community.yearlyExpensesCents + 5000);
+});
+
+test("una derrama conserva el reparto entre las familias elegidas", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const created = await service.createAssessment({ date: "2026-09-05", concept: "Derrama demo", totalAmountCents: 10000, allocations: [{ familyId: "fam_roble", amountCents: 5000 }, { familyId: "fam_pino", amountCents: 5000 }], notes: "" });
+  const after = await service.getSnapshot();
+  assert.match(created.id, /^der_demo_/);
+  assert.equal(after.assessments.length, before.assessments.length + 1);
+  assert.deepEqual(created.allocations.map((item) => item.familyId), ["fam_roble", "fam_pino"]);
+});
+
+test("el adaptador Supabase envía RPC con clave pública y sesión, nunca secretos", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
+    getAccessToken: async () => "jwt-demo",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return { ok: true, json: async () => ({ id: "demo" }) };
+    }
+  });
+
+  await service.createExpense({ date: "2026-09-05", concept: "Gasto demo", amountCents: 950, category: "Otros", provider: "Demo", notes: "" });
+
+  assert.equal(calls[0].url, "https://demo.supabase.co/rest/v1/rpc/create_expense");
+  assert.equal(calls[0].options.headers.apikey, "sb_publishable_demo");
+  assert.equal(calls[0].options.headers.Authorization, "Bearer jwt-demo");
+  assert.deepEqual(JSON.parse(calls[0].options.body), {
+    p_spent_at: "2026-09-05",
+    p_concept: "Gasto demo",
+    p_amount_cents: 950,
+    p_category_name: "Otros",
+    p_provider: "Demo",
+    p_notes: "",
+    p_payment_source: "COMMUNITY",
+    p_payers: []
+  });
+});
+
+test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
+    getAccessToken: async () => "jwt-demo",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return { ok: true, json: async () => ({ id: "fam-demo" }) };
+    }
+  });
+  await service.createFamily({ name: "Familia Naranjo", shortName: "Naranjo", members: 2, joinedAt: "2026-09-05", quotaCents: 60000, notes: "Demo" });
+  assert.equal(calls[0].url, "https://demo.supabase.co/rest/v1/rpc/create_family");
+  assert.deepEqual(JSON.parse(calls[0].options.body), {
+    p_name: "Familia Naranjo",
+    p_short_name: "Naranjo",
+    p_members: 2,
+    p_joined_at: "2026-09-05",
+    p_annual_quota_cents: 60000,
+    p_notes: "Demo"
+  });
+});
+
+test("el adaptador conserva el estado HTTP para detectar una sesión revocada", async () => {
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
+    getAccessToken: async () => "jwt-revocado",
+    fetchImpl: async () => ({ ok: false, status: 403 })
+  });
+  await assert.rejects(service.getSnapshot(), (error) => error.status === 403);
+});

@@ -1,0 +1,387 @@
+/*
+ * Temas visuales.
+ * La maquetación vive en styles.css; cada tema modifica únicamente tokens.
+ */
+
+:root,
+:root[data-theme="plano"] {
+  color-scheme: light;
+  --forest-950: #17382b;
+  --forest-800: #214e3b;
+  --forest-700: #2e654e;
+  --forest-100: #e4eee8;
+  --ink: #25312c;
+  --muted: #69756f;
+  --canvas: #f5f3ec;
+  --surface: #ffffff;
+  --line: #e2e1d9;
+  --clay: #bd654d;
+  --clay-soft: #f5e5df;
+  --sun: #d69c45;
+  --blue: #3f7f8b;
+  --shadow: 0 16px 40px rgba(36, 53, 44, 0.08);
+  --font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: Georgia, "Times New Roman", serif;
+  --radius-lg: 24px;
+  --radius-md: 18px;
+}
+
+/* Aero nocturno: reinterpretación web del cristal oscuro de Windows Vista. */
+:root[data-theme="aero"] {
+  color-scheme: dark;
+  --forest-950: #050b14;
+  --forest-800: #0a4770;
+  --forest-700: #48c7ff;
+  --forest-100: rgba(76, 199, 255, 0.16);
+  --ink: #f3f9ff;
+  --muted: #a9bfd1;
+  --canvas: #07111f;
+  --surface: rgba(13, 31, 51, 0.78);
+  --line: rgba(194, 226, 255, 0.22);
+  --clay: #c46aa8;
+  --clay-soft: rgba(212, 104, 182, 0.16);
+  --sun: #f1c75f;
+  --blue: #58d4ff;
+  --shadow: 0 22px 58px rgba(0, 4, 13, 0.5), inset 0 1px rgba(255, 255, 255, 0.18);
+  --font-body: "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif;
+  --radius-lg: 18px;
+  --radius-md: 14px;
+}
+
+:root[data-theme="aero"] body {
+  background:
+    radial-gradient(circle at 78% 8%, rgba(36, 156, 220, 0.27), transparent 31rem),
+    radial-gradient(circle at 15% 84%, rgba(86, 47, 154, 0.22), transparent 34rem),
+    linear-gradient(155deg, #0c2038 0%, #07111f 48%, #030811 100%);
+  background-attachment: fixed;
+}
+
+:root[data-theme="aero"] body::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(118deg, transparent 28%, rgba(125, 219, 255, 0.045) 42%, transparent 55%),
+    radial-gradient(ellipse at 52% 0%, rgba(213, 242, 255, 0.11), transparent 42%);
+  content: "";
+}
+
+:root[data-theme="aero"] .sidebar {
+  border-right: 1px solid rgba(185, 226, 255, 0.24);
+  background:
+    linear-gradient(180deg, rgba(19, 53, 83, 0.82), rgba(3, 12, 24, 0.92)),
+    radial-gradient(circle at 60% 0%, rgba(80, 204, 255, 0.26), transparent 24rem);
+  box-shadow: inset -1px 0 rgba(255,255,255,.08), 16px 0 45px rgba(0,0,0,.26);
+  backdrop-filter: blur(28px) saturate(145%);
+}
+
+:root[data-theme="aero"] .brand__mark {
+  border-color: rgba(202, 238, 255, 0.46);
+  border-radius: 12px;
+  background: linear-gradient(155deg, rgba(239, 250, 255, 0.96), rgba(159, 210, 239, 0.78));
+  box-shadow: inset 0 1px rgba(255,255,255,.5), 0 8px 22px rgba(0,0,0,.34);
+}
+
+:root[data-theme="aero"] :is(.topbar__logo, .auth-card__mark) {
+  border-color: rgba(202, 238, 255, 0.46);
+  background: linear-gradient(155deg, rgba(239, 250, 255, 0.96), rgba(159, 210, 239, 0.78));
+  box-shadow: inset 0 1px rgba(255,255,255,.5), 0 7px 18px rgba(0,0,0,.28);
+}
+
+:root[data-theme="aero"] .nav-item {
+  color: rgba(224, 241, 255, 0.7);
+  text-shadow: 0 1px 3px rgba(0,0,0,.65);
+}
+
+:root[data-theme="aero"] .nav-item:hover {
+  background: linear-gradient(rgba(96, 190, 239, 0.18), rgba(20, 72, 111, 0.18));
+}
+
+:root[data-theme="aero"] .nav-item.is-active {
+  border: 1px solid rgba(162, 223, 255, 0.42);
+  background: linear-gradient(180deg, rgba(87, 193, 241, 0.43), rgba(9, 65, 105, 0.5));
+  box-shadow: inset 0 1px rgba(255,255,255,.32), 0 7px 18px rgba(0,0,0,.22);
+}
+
+:root[data-theme="aero"] .status-dot {
+  background: #64dcff;
+  box-shadow: 0 0 0 4px rgba(100,220,255,.12), 0 0 16px rgba(100,220,255,.75);
+}
+
+:root[data-theme="aero"] .topbar {
+  border-color: rgba(188, 226, 255, 0.18);
+  background: linear-gradient(180deg, rgba(21, 48, 75, 0.72), rgba(7, 20, 36, 0.58));
+  box-shadow: inset 0 1px rgba(255,255,255,.1), 0 10px 35px rgba(0,0,0,.2);
+  backdrop-filter: blur(24px) saturate(150%);
+}
+
+:root[data-theme="aero"] .topbar h1,
+:root[data-theme="aero"] .page-heading h2,
+:root[data-theme="aero"] .welcome-row h2,
+:root[data-theme="aero"] .panel h3,
+:root[data-theme="aero"] .list-section__heading h3 {
+  font-weight: 600;
+  letter-spacing: -.02em;
+  text-shadow: 0 1px 6px rgba(0,0,0,.7);
+}
+
+:root[data-theme="aero"] .profile-button,
+:root[data-theme="aero"] .secondary-button,
+:root[data-theme="aero"] .filter-chip,
+:root[data-theme="aero"] .icon-button {
+  border-color: rgba(191, 228, 255, 0.28);
+  background: linear-gradient(180deg, rgba(70, 111, 147, 0.38), rgba(11, 29, 48, 0.62));
+  box-shadow: inset 0 1px rgba(255,255,255,.22), 0 6px 16px rgba(0,0,0,.2);
+  color: var(--ink);
+}
+
+:root[data-theme="aero"] .profile-avatar,
+:root[data-theme="aero"] .appearance-profile > span {
+  background: linear-gradient(155deg, rgba(99, 202, 248, 0.38), rgba(25, 66, 101, 0.48));
+  color: #e9f8ff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.7);
+}
+
+:root[data-theme="aero"] .profile-avatar [data-profile-initials] {
+  display: none;
+}
+
+:root[data-theme="aero"] .profile-user-icon {
+  display: block;
+  color: #b9efff;
+  filter: drop-shadow(0 0 5px rgba(71, 205, 255, .55));
+}
+
+:root[data-theme="aero"] .primary-button,
+:root[data-theme="aero"] .filter-chip.is-active {
+  border-color: rgba(172, 229, 255, 0.56);
+  background: linear-gradient(180deg, #35b7f0 0%, #1478b6 50%, #07527f 52%, #0b6da6 100%);
+  box-shadow: inset 0 1px rgba(255,255,255,.6), inset 0 -1px rgba(0,0,0,.34), 0 8px 24px rgba(0, 136, 208, 0.28);
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,.58);
+}
+
+:root[data-theme="aero"] :is(.summary-card, .panel, .family-card, .inline-summary, .expense-list, .water-summary > article, .water-family-card, .assessment-card) {
+  border-color: rgba(191, 228, 255, 0.22);
+  background:
+    linear-gradient(150deg, rgba(255,255,255,.075), transparent 42%),
+    linear-gradient(180deg, rgba(22, 49, 76, 0.82), rgba(8, 24, 42, 0.82));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(22px) saturate(135%);
+}
+
+:root[data-theme="aero"] .summary-card--balance,
+:root[data-theme="aero"] .feature-total,
+:root[data-theme="aero"] .water-summary .tariff-card {
+  border: 1px solid rgba(167, 225, 255, 0.4);
+  background:
+    radial-gradient(circle at 82% 12%, rgba(85, 211, 255, 0.34), transparent 34%),
+    linear-gradient(155deg, rgba(20, 119, 173, 0.94), rgba(4, 34, 62, 0.96));
+  box-shadow: inset 0 1px rgba(255,255,255,.34), 0 18px 38px rgba(0,5,16,.4), 0 0 25px rgba(27,150,212,.1);
+  color: white;
+}
+
+:root[data-theme="aero"] .summary-card:nth-child(-n + 2) strong {
+  font-size: clamp(1.3rem, 2vw, 1.72rem);
+  white-space: nowrap;
+}
+
+:root[data-theme="aero"] .summary-card:not(.summary-card--balance) .summary-card__icon,
+:root[data-theme="aero"] :is(.water-glance__icon, .water-summary__icon, .expense-row__icon, .assessment-card__icon, .empty-page > span, .more-menu > div > span) {
+  border: 1px solid rgba(155, 221, 255, 0.26);
+  background: linear-gradient(155deg, rgba(75, 192, 242, 0.26), rgba(15, 55, 89, 0.34));
+  color: #77dcff;
+  box-shadow: inset 0 1px rgba(255,255,255,.2);
+}
+
+:root[data-theme="aero"] .summary-card:not(.summary-card--balance) :is(.summary-card__icon--sun, .summary-card__icon--blue, .summary-card__icon--clay),
+:root[data-theme="aero"] .water-summary__icon--coins {
+  background: linear-gradient(155deg, rgba(92, 198, 244, 0.23), rgba(22, 54, 88, 0.4));
+  color: #9ce6ff;
+}
+
+:root[data-theme="aero"] .bar-chart {
+  background: repeating-linear-gradient(to bottom, rgba(185, 223, 249, 0.12) 0, rgba(185, 223, 249, 0.12) 1px, transparent 1px, transparent 62px);
+}
+
+:root[data-theme="aero"] .bar-chart__bar {
+  border: 1px solid rgba(171, 232, 255, 0.4);
+  background: linear-gradient(90deg, #167eb7, #54d5ff);
+  box-shadow: inset 0 1px rgba(255,255,255,.42), 0 0 15px rgba(65,199,250,.15);
+}
+
+:root[data-theme="aero"] .bar-chart__item:nth-child(8) .bar-chart__bar {
+  background: linear-gradient(90deg, #794d9d, #d27bc0);
+}
+
+:root[data-theme="aero"] .donut {
+  background: conic-gradient(#52d4ff 0 14.7%, #f1c75f 14.7% 39.7%, #59b9a9 39.7% 60.2%, #c46aa8 60.2% 84.3%, #738ba5 84.3% 100%);
+  box-shadow: inset 0 0 0 27px #10243b, 0 0 24px rgba(82,212,255,.14);
+}
+
+:root[data-theme="aero"] .donut span {
+  font-size: .9rem;
+  text-shadow: 0 1px 4px rgba(0,0,0,.7);
+}
+
+:root[data-theme="aero"] .inline-summary > div,
+:root[data-theme="aero"] .expense-row,
+:root[data-theme="aero"] .water-pending,
+:root[data-theme="aero"] .reading-pair {
+  border-color: rgba(188, 226, 255, 0.16);
+}
+
+:root[data-theme="aero"] .family-card__account > span {
+  border: 1px solid rgba(188, 226, 255, 0.12);
+  background: rgba(5, 22, 39, 0.42);
+}
+
+:root[data-theme="aero"] .family-avatar {
+  border: 1px solid rgba(181, 225, 255, 0.3);
+  background: linear-gradient(155deg, rgba(96, 205, 250, 0.25), rgba(20, 56, 89, 0.48));
+  color: #b9edff;
+  box-shadow: inset 0 1px rgba(255,255,255,.24);
+}
+
+:root[data-theme="aero"] :is(.status-pill--paid, .status-pill--exceeded) {
+  background: rgba(70, 202, 242, 0.16);
+  color: #a8ecff;
+}
+
+:root[data-theme="aero"] :is(.status-pill--partial, .status-pill--pending) {
+  background: rgba(241, 199, 95, 0.17);
+  color: #ffe5a3;
+}
+
+:root[data-theme="aero"] .progress-track {
+  background: rgba(206, 232, 250, 0.12);
+}
+
+:root[data-theme="aero"] .usage-pill,
+:root[data-theme="aero"] .previous-reading,
+:root[data-theme="aero"] .aero-note {
+  border: 1px solid rgba(163, 222, 255, 0.18);
+  background: linear-gradient(155deg, rgba(62, 166, 214, 0.16), rgba(11, 38, 61, 0.28));
+  color: #d6f3ff;
+}
+
+:root[data-theme="aero"] .info-note {
+  border-color: rgba(163, 222, 255, 0.22);
+  background: rgba(20, 55, 83, 0.48);
+  color: #c8deec;
+  backdrop-filter: blur(14px);
+}
+
+:root[data-theme="aero"] .water-family-card:hover {
+  border-color: rgba(125, 218, 255, 0.6);
+  box-shadow: 0 16px 34px rgba(0,4,14,.45), 0 0 20px rgba(63,193,243,.12), inset 0 1px rgba(255,255,255,.17);
+}
+
+:root[data-theme="aero"] .toast {
+  border: 1px solid rgba(174, 225, 255, 0.34);
+  background: linear-gradient(180deg, rgba(25, 65, 99, 0.96), rgba(5, 20, 35, 0.97));
+  box-shadow: var(--shadow);
+}
+
+:root[data-theme="aero"] .app-dialog {
+  border: 1px solid rgba(196, 231, 255, 0.34);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.08), transparent 32%),
+    rgba(8, 24, 42, 0.92);
+  box-shadow: inset 0 1px rgba(255,255,255,.25), 0 35px 100px rgba(0,0,0,.68), 0 0 32px rgba(74,193,246,.12);
+  backdrop-filter: blur(34px) saturate(145%);
+}
+
+:root[data-theme="aero"] .app-dialog::backdrop {
+  background: rgba(0, 5, 14, 0.68);
+  backdrop-filter: blur(7px);
+}
+
+:root[data-theme="aero"] .dialog-header {
+  border-color: rgba(190, 228, 255, 0.18);
+  background: linear-gradient(180deg, rgba(40, 79, 111, 0.68), rgba(9, 27, 45, 0.74));
+  box-shadow: inset 0 1px rgba(255,255,255,.18);
+  backdrop-filter: blur(28px);
+}
+
+:root[data-theme="aero"] .dialog-tabs button.is-active,
+:root[data-theme="aero"] .theme-option.is-selected .theme-option__state {
+  background: rgba(72, 199, 255, 0.16);
+  color: #a9ebff;
+}
+
+:root[data-theme="aero"] .detail-grid {
+  border-color: rgba(190,228,255,.18);
+  background: rgba(190,228,255,.18);
+}
+
+:root[data-theme="aero"] .detail-grid > div,
+:root[data-theme="aero"] .dialog-form input,
+:root[data-theme="aero"] .dialog-form select {
+  border-color: rgba(190,228,255,.22);
+  background: rgba(3, 14, 27, 0.58);
+  color: var(--ink);
+}
+
+:root[data-theme="aero"] .dialog-form label {
+  color: #c8ddeb;
+}
+
+:root[data-theme="aero"] :is(.choice-fieldset legend, .allocation-editor legend) {
+  color: #c8ddeb;
+}
+
+:root[data-theme="aero"] :is(.choice-options > label, .allocation-editor) {
+  border-color: rgba(190,228,255,.2);
+  background: rgba(6, 22, 38, 0.44);
+}
+
+:root[data-theme="aero"] .allocation-check {
+  background: rgba(207, 116, 83, 0.18);
+  color: #ffd0bd;
+}
+
+:root[data-theme="aero"] .allocation-check.is-valid {
+  background: rgba(70, 202, 242, 0.16);
+  color: #a8ecff;
+}
+
+:root[data-theme="aero"] :is(.family-note, .demo-disclaimer, .appearance-profile) {
+  border: 1px solid rgba(189, 227, 255, 0.16);
+  background: rgba(21, 48, 73, 0.48);
+}
+
+:root[data-theme="aero"] .theme-option {
+  border-color: rgba(189, 227, 255, 0.2);
+  background: rgba(8, 23, 40, 0.48);
+}
+
+:root[data-theme="aero"] .theme-option.is-selected {
+  border-color: rgba(101, 211, 255, 0.74);
+  box-shadow: 0 0 0 3px rgba(65, 186, 239, 0.13), inset 0 1px rgba(255,255,255,.16);
+}
+
+:root[data-theme="aero"] .theme-option__state {
+  background: rgba(181, 221, 245, 0.1);
+}
+
+:root[data-theme="aero"] .mobile-nav {
+  border-color: rgba(191, 228, 255, 0.25);
+  background: linear-gradient(180deg, rgba(24, 55, 83, 0.88), rgba(3, 13, 25, 0.94));
+  box-shadow: inset 0 1px rgba(255,255,255,.19), 0 -12px 30px rgba(0,0,0,.38);
+  backdrop-filter: blur(26px) saturate(150%);
+}
+
+:root[data-theme="aero"] .mobile-nav .nav-item.is-active {
+  border-color: rgba(149, 221, 255, 0.35);
+  background: linear-gradient(180deg, rgba(73, 187, 236, 0.34), rgba(13, 65, 101, 0.46));
+  color: #dff7ff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-theme="aero"] :is(.panel, .summary-card, .family-card, .water-family-card, .profile-button, .primary-button, .mobile-nav, .sidebar) {
+    transition: background .28s ease, border-color .28s ease, box-shadow .28s ease, color .28s ease;
+  }
+}

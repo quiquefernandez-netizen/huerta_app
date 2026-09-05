@@ -1,0 +1,106 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #07111f;
+  color: #eef7ff;
+}
+
+.review-bar {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  min-height: 60px;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 9px 18px;
+  border-bottom: 1px solid rgba(180, 222, 248, .18);
+  background: rgba(7, 17, 31, .94);
+  backdrop-filter: blur(16px);
+}
+
+.review-bar > div,
+.review-bar nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-bar span { color: #9eb4c6; font-size: .78rem; }
+
+.review-bar button,
+.review-bar a {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(180, 222, 248, .22);
+  border-radius: 10px;
+  background: rgba(36, 70, 99, .48);
+  color: inherit;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.review-bar button.is-active {
+  border-color: #69d5ff;
+  background: #126b99;
+}
+
+.preview-stage {
+  display: grid;
+  min-height: calc(100vh - 60px);
+  place-items: start center;
+  padding: 24px;
+}
+
+.device-frame {
+  --device-width: 390px;
+  --device-height: 844px;
+  position: relative;
+  width: calc(var(--device-width) + 16px);
+  height: calc(var(--device-height) + 16px);
+  flex: none;
+  overflow: hidden;
+  border: 8px solid #18222c;
+  border-radius: 36px;
+  background: white;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .55), 0 0 0 1px rgba(255, 255, 255, .18);
+  transition: width .2s ease, height .2s ease;
+}
+
+.device-frame__speaker {
+  position: absolute;
+  z-index: 2;
+  top: 7px;
+  left: 50%;
+  width: 54px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(7, 17, 31, .68);
+  transform: translateX(-50%);
+}
+
+.device-frame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: white;
+}
+
+@media (max-width: 700px) {
+  .review-bar { flex-wrap: wrap; gap: 7px 12px; }
+  .review-bar a { display: none; }
+  .preview-stage { padding: 12px; }
+  .device-frame { max-width: calc(100vw - 24px); }
+}

@@ -1,0 +1,113 @@
+/*
+ * Iconografía del tema Aero: C · Holo esencial.
+ * Una reinterpretación original del lenguaje Android 4.0 de 2011:
+ * geometría firme, trazo fino y acento azul eléctrico.
+ * El tema Plano conserva su iconografía cálida original.
+ */
+
+:root[data-theme="aero"][data-icon-style="holo"] {
+  --holo-icon: #58d9ff;
+  --holo-icon-bright: #a3edff;
+  --holo-icon-surface: rgba(34, 181, 226, .1);
+  --holo-icon-line: rgba(88, 217, 255, .68);
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .icon,
+:root[data-theme="aero"][data-icon-style="holo"] .empty-page__icon {
+  stroke-width: 1.65;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .nav-item .icon {
+  color: var(--holo-icon);
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--holo-icon) 22%, transparent));
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .nav-item.is-active .icon {
+  color: var(--holo-icon-bright);
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] :is(
+  .summary-card__icon,
+  .water-glance__icon,
+  .expense-row__icon,
+  .water-summary__icon,
+  .empty-page > span,
+  .more-menu > div > span
+) {
+  border: 1px solid color-mix(in srgb, var(--holo-icon-line) 40%, transparent);
+  border-bottom: 2px solid var(--holo-icon-line);
+  border-radius: 3px;
+  background: var(--holo-icon-surface);
+  color: var(--holo-icon);
+  box-shadow: none;
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .summary-card--balance .summary-card__icon {
+  border-color: rgba(104, 223, 255, .18);
+  border-bottom-color: #60d8f8;
+  background: rgba(4, 30, 37, .2);
+  color: #78e3ff;
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .summary-card:not(.summary-card--balance) :is(
+  .summary-card__icon,
+  .summary-card__icon--sun,
+  .summary-card__icon--blue,
+  .summary-card__icon--clay
+),
+:root[data-theme="aero"][data-icon-style="holo"] .water-summary__icon--coins {
+  background: var(--holo-icon-surface);
+  color: var(--holo-icon);
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] :is(.icon-button, .more-menu > div) {
+  border-radius: 3px;
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .icon-button {
+  border-bottom: 2px solid var(--holo-icon-line);
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] :is(
+  .text-link,
+  .family-card__button,
+  .water-family-card,
+  .info-note,
+  .water-pending
+) .icon {
+  color: var(--holo-icon);
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .primary-button .icon {
+  color: var(--holo-icon-bright);
+  filter: drop-shadow(0 0 3px rgba(82, 215, 250, .25));
+}
+
+:root[data-theme="aero"][data-icon-style="holo"] .toast .icon {
+  color: #62d6af;
+}
+
+@media (max-width: 759px) {
+  :root[data-theme="aero"][data-icon-style="holo"] .mobile-nav .nav-item {
+    border-bottom: 2px solid transparent;
+    border-radius: 2px;
+  }
+
+  :root[data-theme="aero"][data-icon-style="holo"] .mobile-nav .nav-item.is-active {
+    border-bottom-color: var(--holo-icon);
+    background: transparent;
+    color: var(--ink);
+  }
+
+  :root[data-theme="aero"][data-icon-style="holo"] .mobile-nav .nav-item.is-active {
+    background: rgba(43, 181, 225, .06);
+    color: #edfaff;
+  }
+}
+
+@supports not (color: color-mix(in srgb, white 50%, black)) {
+  :root[data-theme="aero"][data-icon-style="holo"] .nav-item .icon { filter: none; }
+  :root[data-theme="aero"][data-icon-style="holo"] :is(.summary-card__icon, .water-glance__icon, .expense-row__icon, .water-summary__icon, .empty-page > span, .more-menu > div > span) { border-color: var(--holo-icon-line); }
+}

@@ -1,0 +1,48 @@
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Ejecutar pruebas
+        run: npm test
+
+      - name: Comprobar JavaScript
+        run: npm run check
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+
+      - name: Preparar archivos estáticos
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: frontend
+
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
