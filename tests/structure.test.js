@@ -9,6 +9,12 @@ test("el frontend contiene las regiones principales y configuración PWA", async
   }
 });
 
+test("el logo vuelve siempre a Inicio en escritorio y móvil", async () => {
+  const html = await readFile(new URL("../frontend/index.html", import.meta.url), "utf8");
+  assert.match(html, /class="brand" href="#inicio"/);
+  assert.match(html, /class="topbar__home" href="#inicio" aria-label="Ir a Inicio"/);
+});
+
 test("la revisión visual ofrece marcos móviles de 390 y 360 píxeles", async () => {
   const html = await readFile(new URL("../frontend/mobile-preview.html", import.meta.url), "utf8");
   const styles = await readFile(new URL("../frontend/css/mobile-preview.css", import.meta.url), "utf8");

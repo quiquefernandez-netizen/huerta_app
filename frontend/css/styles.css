@@ -37,7 +37,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .topbar__route { min-width: 0; gap: 10px; }
 .topbar__route > div { min-width: 0; }
 .topbar__route p { margin: 2px 0 0; overflow: hidden; color: var(--muted); font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
-.topbar__logo { display: none; }
+.topbar__home { display: none; flex: none; }
+.topbar__logo { display: block; }
 .topbar__tools { gap: 10px; }
 .topbar-actions { gap: 8px; }
 .topbar-actions .primary-button, .topbar-actions .secondary-button { min-height: 42px; padding: 8px 12px; border-radius: 12px; font-size: .78rem; }
@@ -391,7 +392,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .app-main { margin-left: 0; }
   .topbar { min-height: 64px; gap: 8px; padding: 8px 12px; }
   .topbar__route { gap: 8px; }
-  .topbar__logo { display: block; width: 38px; height: 38px; flex: none; object-fit: contain; padding: 2px; border: 1px solid var(--line); border-radius: 11px; background: white; }
+  .topbar__home { display: block; }
+  .topbar__logo { width: 38px; height: 38px; object-fit: contain; padding: 2px; border: 1px solid var(--line); border-radius: 11px; background: white; }
   .topbar__route p { display: none; }
   .topbar h1 { overflow: hidden; font-size: 1.2rem; text-overflow: ellipsis; white-space: nowrap; }
   .topbar__tools { gap: 5px; }
