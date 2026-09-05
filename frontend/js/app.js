@@ -307,7 +307,7 @@ function renderTopbar(route) {
     const readings = latestWaterReadings();
     const settlement = waterSettlementState().preview;
     const canSettle = isAdministrator() && settlement && settlement.totalUsageM3 > 0;
-    actions = `${readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
+    actions = `${isAdministrator() && readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
   }
   document.querySelector("#page-title").textContent = route.label;
   document.querySelector("#page-context").textContent = contexts[route.id] ?? "Sección de la comunidad";

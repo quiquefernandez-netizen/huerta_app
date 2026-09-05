@@ -184,8 +184,8 @@
 }
 
 :root[data-theme="aero"] .summary-card:nth-child(-n + 2) strong {
-  font-size: clamp(1.3rem, 2vw, 1.72rem);
-  white-space: nowrap;
+  font-size: clamp(1.15rem, 1.7vw, 1.65rem);
+  white-space: normal;
 }
 
 :root[data-theme="aero"] .summary-card:not(.summary-card--balance) .summary-card__icon,

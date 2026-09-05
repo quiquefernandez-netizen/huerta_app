@@ -46,11 +46,20 @@ test("las páginas de Fase 1 están registradas como disponibles", async () => {
   }
 });
 
-test("la interfaz oculta administración y altas de gasto al perfil normal", async () => {
+test("la interfaz oculta administración y altas al perfil normal", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
   assert.match(source, /route\.id !== "administracion" \|\| isAdministrator\(\)/);
   assert.match(source, /isAdministrator\(\) && route\.id === "gastos"[\s\S]*?data-open-expense/);
+  assert.match(source, /isAdministrator\(\) && readings\.length \? `<button class="secondary-button" type="button" data-open-water/);
   assert.match(source, /profileButton\.querySelector\("small"\)\.textContent = isAdministrator\(\) \? "Administrador" : "Perfil normal"/);
+});
+
+test("los importes de resumen se adaptan a cifras grandes sin salir de la tarjeta", async () => {
+  const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
+  const themes = await readFile(new URL("../frontend/css/themes.css", import.meta.url), "utf8");
+  assert.match(styles, /\.summary-card > div\s*\{[^}]*min-width:\s*0[^}]*flex:\s*1/);
+  assert.match(styles, /\.summary-card strong\s*\{[^}]*overflow-wrap:\s*anywhere/);
+  assert.match(themes, /\.summary-card:nth-child\(-n \+ 2\) strong\s*\{[^}]*white-space:\s*normal/);
 });
 
 test("las acciones de cabecera conservan superficie táctil y ocultan solo la etiqueta en móvil", async () => {
