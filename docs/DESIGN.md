@@ -7,7 +7,7 @@ La aplicación admite dos direcciones visuales sobre la misma estructura:
 - **Plano:** nombre del diseño actual. Está disponible y sigue siendo provisional.
 - **Aero:** cristal nocturno inspirado en el lenguaje visual Aero de Windows Vista. Está disponible.
 
-El nombre de producto continúa retirado de la interfaz visible: el panel se identifica de forma neutra como «la comunidad» mientras Dani trabaja el nombre definitivo. Para facilitar la instalación en móvil, el manifiesto PWA usa provisionalmente **La Huerta** como nombre y nombre corto de la aplicación instalada. Desde septiembre de 2026 se prueba una primera interpretación digital de su símbolo; continúa siendo una propuesta y no un cierre de identidad.
+El nombre de producto continúa retirado de la interfaz visible: el panel se identifica de forma neutra como «la comunidad» mientras Dani trabaja el nombre definitivo. Para facilitar la instalación en móvil, el manifiesto PWA usa provisionalmente **La Huerta** como nombre y nombre corto de la aplicación instalada. Incluye iconos Android de 192 y 512 píxeles, una variante maskable y un service worker para cumplir el flujo de instalación como aplicación. Desde septiembre de 2026 se prueba una primera interpretación digital de su símbolo; continúa siendo una propuesta y no un cierre de identidad.
 
 ## Concepto de logo de Dani
 

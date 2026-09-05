@@ -80,6 +80,17 @@ test("La Huerta se usa solo como nombre de instalación PWA", async () => {
   const manifest = await readFile(new URL("../frontend/manifest.webmanifest", import.meta.url), "utf8");
   assert.match(manifest, /"name": "La Huerta"/);
   assert.match(manifest, /"short_name": "La Huerta"/);
+  assert.match(manifest, /icon-192\.png/);
+  assert.match(manifest, /icon-maskable-512\.png/);
+});
+
+test("la instalación PWA registra un service worker e iconos de Android", async () => {
+  const html = await readFile(new URL("../frontend/index.html", import.meta.url), "utf8");
+  const worker = await readFile(new URL("../frontend/service-worker.js", import.meta.url), "utf8");
+  assert.match(html, /serviceWorker\.register\("\.\/service-worker\.js"/);
+  assert.match(html, /apple-touch-icon/);
+  assert.match(worker, /self\.addEventListener\("install"/);
+  assert.match(worker, /self\.addEventListener\("fetch"/);
 });
 
 test("la categoría Impuestos está disponible en la demo y en el seed de Supabase", async () => {
