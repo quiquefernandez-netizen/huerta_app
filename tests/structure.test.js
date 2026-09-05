@@ -4,14 +4,15 @@ import { readFile } from "node:fs/promises";
 
 test("el frontend contiene las regiones principales y configuración PWA", async () => {
   const html = await readFile(new URL("../frontend/index.html", import.meta.url), "utf8");
-  for (const marker of ["main-content", "data-navigation", "data-mobile-navigation", "data-open-appearance", "app-dialog", "manifest.webmanifest", "theme-manager.js", "themes.css", "iconography.css", "data-icon-style=\"holo\"", "logo-dani-concept.png", "profile-button--mobile"]) {
+  for (const marker of ["main-content", "data-navigation", "data-mobile-navigation", "data-open-appearance", "app-dialog", "manifest.webmanifest", "theme-manager.js", "themes.css", "iconography.css", "data-icon-style=\"holo\"", "logo-dani-concept.png", "topbar-actions"]) {
     assert.ok(html.includes(marker), `Falta ${marker} en index.html`);
   }
 });
 
-test("el logo de la barra lateral vuelve siempre a Inicio", async () => {
+test("el logo vuelve siempre a Inicio en escritorio y móvil", async () => {
   const html = await readFile(new URL("../frontend/index.html", import.meta.url), "utf8");
   assert.match(html, /class="brand" href="#inicio"/);
+  assert.match(html, /class="topbar__home" href="#inicio" aria-label="Ir a Inicio"/);
 });
 
 test("la revisión visual ofrece marcos móviles de 390 y 360 píxeles", async () => {
@@ -52,21 +53,19 @@ test("la interfaz oculta administración y altas de gasto al perfil normal", asy
   assert.match(source, /profileButton\.querySelector\("small"\)\.textContent = isAdministrator\(\) \? "Administrador" : "Perfil normal"/);
 });
 
-test("las acciones de sección conservan superficie táctil y ocultan solo la etiqueta en móvil", async () => {
+test("las acciones de cabecera conservan superficie táctil y ocultan solo la etiqueta en móvil", async () => {
   const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
   assert.doesNotMatch(styles, /\n\s*\.primary-button\s*\{[^}]*font-size:\s*0/);
-  assert.match(styles, /\.page-actions \.action-label\s*\{[^}]*display:\s*none/);
-  assert.match(styles, /\.page-actions \.primary-button[^\{]+\{[^}]*min-height:\s*46px/);
+  assert.match(styles, /\.topbar-actions \.action-label\s*\{[^}]*display:\s*none/);
+  assert.match(styles, /\.topbar-actions \.primary-button[^\{]+\{[^}]*width:\s*40px[^}]*min-height:\s*40px/);
 });
 
-test("la interfaz no usa barra superior y no repite el saludo", async () => {
+test("la interfaz usa una cabecera compacta sin repetir el saludo ni grandes cabeceras de sección", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
-  const html = await readFile(new URL("../frontend/index.html", import.meta.url), "utf8");
   const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
   assert.doesNotMatch(source, /Buenos d[ií]as/i);
-  assert.doesNotMatch(html, /class="topbar"/);
-  assert.doesNotMatch(styles, /\.topbar\s*\{/);
-  assert.match(source, /function renderPageHeading/);
+  assert.doesNotMatch(source, /class="(?:welcome-row|page-heading)"/);
+  assert.match(styles, /\.topbar\s*\{[^}]*min-height:\s*72px/);
 });
 
 test("La Huerta se usa solo como nombre de instalación PWA", async () => {

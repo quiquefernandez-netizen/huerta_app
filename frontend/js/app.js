@@ -277,7 +277,7 @@ function renderPlaceholder(title) {
   return `<section class="empty-page"><span>${icon("calendar", "empty-page__icon")}</span><p class="section-kicker">Próxima fase</p><h2>${title}</h2><p>Esta sección está prevista, pero aún no forma parte de esta primera iteración.</p><a href="#inicio" class="secondary-button">Volver a Inicio</a></section>`;
 }
 
-function renderPageHeading(route) {
+function renderTopbar(route) {
   const plan = activeQuotaPlan();
   const contexts = {
     inicio: "Resumen de la comunidad",
@@ -298,8 +298,9 @@ function renderPageHeading(route) {
     const canSettle = isAdministrator() && settlement && settlement.totalUsageM3 > 0;
     actions = `${readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
   }
-  if (route.id === "inicio") return "";
-  return `<header class="page-heading"><div><p class="section-kicker">${escapeHtml(contexts[route.id] ?? "Sección de la comunidad")}</p><h1>${escapeHtml(route.label)}</h1></div>${actions ? `<div class="page-actions">${actions}</div>` : ""}</header>`;
+  document.querySelector("#page-title").textContent = route.label;
+  document.querySelector("#page-context").textContent = contexts[route.id] ?? "Sección de la comunidad";
+  document.querySelector("#topbar-actions").innerHTML = actions;
 }
 
 function renderRoute() {
@@ -307,9 +308,9 @@ function renderRoute() {
   const requestedRoute = location.hash.slice(1) || "inicio";
   const route = visibleRoutes().find((item) => item.id === requestedRoute) || routes[0];
   renderNavigation(route.id);
+  renderTopbar(route);
   const renderers = { inicio: renderDashboard, familias: renderFamilies, gastos: renderExpenses, agua: renderWater };
-  const content = renderers[route.id] ? renderers[route.id]() : renderPlaceholder(route.label);
-  pageContent.innerHTML = `${renderPageHeading(route)}${content}`;
+  pageContent.innerHTML = renderers[route.id] ? renderers[route.id]() : renderPlaceholder(route.label);
   document.title = `${route.label} · Comunidad`;
   bindInteractions();
 }
@@ -890,7 +891,7 @@ function bindInteractions() {
   document.querySelector("[data-open-water-settlement]")?.addEventListener("click", openWaterSettlementDialog);
   document.querySelectorAll("[data-water-family]").forEach((button) => button.addEventListener("click", () => openWaterDialog(button.dataset.waterFamily)));
   document.querySelectorAll("[data-expense-filter]").forEach((button) => button.addEventListener("click", () => { expenseFilter = button.dataset.expenseFilter; renderRoute(); }));
-  document.querySelectorAll("[data-open-appearance]").forEach((button) => button.addEventListener("click", openAppearanceDialog));
+  document.querySelector("[data-open-appearance]")?.addEventListener("click", openAppearanceDialog);
 }
 
 function registerWebMcpTools() {
@@ -937,11 +938,10 @@ async function loadPanel() {
   pageContent.hidden = true;
   data = await service.getSnapshot();
   const viewerName = data.viewer?.displayName ?? "Mi cuenta";
-  document.querySelectorAll(".profile-button").forEach((profileButton) => {
-    profileButton.querySelector("[data-profile-initials]").textContent = viewerName.slice(0, 2).toUpperCase();
-    profileButton.querySelector("strong").textContent = viewerName;
-    profileButton.querySelector("small").textContent = isAdministrator() ? "Administrador" : "Perfil normal";
-  });
+  const profileButton = document.querySelector(".profile-button");
+  profileButton.querySelector("[data-profile-initials]").textContent = viewerName.slice(0, 2).toUpperCase();
+  profileButton.querySelector("strong").textContent = viewerName;
+  profileButton.querySelector("small").textContent = isAdministrator() ? "Administrador" : "Perfil normal";
   loadingState.hidden = true;
   pageContent.hidden = false;
   renderRoute();

@@ -21,7 +21,7 @@ La propuesta se muestra en la barra lateral, la cabecera móvil, el acceso, el f
 - el tono final del rosa y si el líquido debe ser una franja o un relleno continuo;
 - si necesita una variante monocroma y otra específica para fondos oscuros.
 
-La navegación no ocupa una barra superior: en escritorio se mantiene en la barra lateral y en móvil en la barra inferior. Inicio abre directamente con el resumen. En las demás secciones, el título y las acciones pertenecen al propio contenido, siguiendo una jerarquía más directa. El perfil se integra al pie de la barra lateral y, en móvil, aparece como un control circular independiente para no crear una segunda barra.
+La barra superior compacta reúne el nombre de la sección, el contexto y las acciones principales. No cambia el modo de instalación: la PWA se abre sin URL ni controles del navegador cuando se instala. En móvil el contexto se oculta y los botones conservan una superficie táctil de 40 px para recuperar espacio sin perder claridad. En escritorio la barra lateral muestra solo el símbolo y reduce en 30 px el espacio anterior a la navegación.
 
 ## Tema Plano
 
