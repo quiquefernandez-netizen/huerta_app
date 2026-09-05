@@ -93,6 +93,15 @@ test("la instalación PWA registra un service worker e iconos de Android", async
   assert.match(worker, /self\.addEventListener\("fetch"/);
 });
 
+test("el reparto de gastos usa segmentos reales y porcentajes legibles", async () => {
+  const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
+  assert.match(source, /const expenseSegments/);
+  assert.match(source, /del gasto/);
+  assert.match(styles, /conic-gradient\(var\(--segments\)\)/);
+  assert.match(styles, /\.legend-copy small/);
+});
+
 test("la categoría Impuestos está disponible en la demo y en el seed de Supabase", async () => {
   const demo = await readFile(new URL("../frontend/js/data/demo-data.js", import.meta.url), "utf8");
   const seed = await readFile(new URL("../supabase/seed.sql", import.meta.url), "utf8");

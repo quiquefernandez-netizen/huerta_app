@@ -114,6 +114,14 @@ function renderDashboard() {
   const activeFamilyCount = data.community.activeFamilyCount ?? activeFamilies.length;
   const maxMonthlyExpense = Math.max(1, ...data.monthlyExpensesCents);
   const categoryTotal = sumCents(data.expenseCategories, (category) => category.amountCents);
+  let segmentStart = 0;
+  const expenseSegments = data.expenseCategories.filter((category) => category.amountCents > 0).map((category) => {
+    const segmentEnd = segmentStart + (category.amountCents / categoryTotal) * 100;
+    const gapStart = Math.max(segmentStart, segmentEnd - 0.85);
+    const segment = `${safeCssColor(category.color)} ${segmentStart.toFixed(2)}% ${gapStart.toFixed(2)}%, var(--surface) ${gapStart.toFixed(2)}% ${segmentEnd.toFixed(2)}%`;
+    segmentStart = segmentEnd;
+    return segment;
+  }).join(", ");
   const waterTotalM3 = waterSettlementState().preview?.totalUsageM3 ?? 0;
   const yearlyDifferenceCents = data.community.yearlyIncomeCents - data.community.yearlyExpensesCents;
   const pendingFamilies = activeFamilies.length - upToDate;
@@ -134,8 +142,11 @@ function renderDashboard() {
       </article>
       <article class="panel categories-panel">
         <div class="panel__heading"><div><p class="section-kicker">Este año</p><h3>¿En qué gastamos?</h3></div></div>
-        <div class="donut" style="--segments:${data.expenseCategories.map((category) => `${safeCssColor(category.color)} 0`).join(",")}" aria-hidden="true"><span>${formatMoney(categoryTotal)}</span><small>Total</small></div>
-        <ul class="legend-list">${data.expenseCategories.map((category) => `<li><span class="legend-dot" style="--dot:${safeCssColor(category.color)}"></span><span>${escapeHtml(category.name)}</span><strong>${formatMoney(category.amountCents)}</strong></li>`).join("")}</ul>
+        <div class="donut" style="--segments:${expenseSegments}" role="img" aria-label="Reparto de gastos por categoría"><span>${formatMoney(categoryTotal)}</span><small>Total</small></div>
+        <ul class="legend-list">${data.expenseCategories.map((category) => {
+          const percentage = categoryTotal ? Math.round((category.amountCents / categoryTotal) * 100) : 0;
+          return `<li><span class="legend-dot" style="--dot:${safeCssColor(category.color)}"></span><span class="legend-copy"><span>${escapeHtml(category.name)}</span><small>${percentage} % del gasto</small></span><strong>${formatMoney(category.amountCents)}</strong></li>`;
+        }).join("")}</ul>
       </article>
       <article class="panel water-glance">
         <span class="water-glance__icon">${icon("water")}</span>

@@ -92,12 +92,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .bar-chart__value { position: absolute; top: calc(100% - var(--bar-height) - 22px); opacity: 0; font-size: .66rem; white-space: nowrap; transition: opacity .15s; }
 .bar-chart__item:hover .bar-chart__value { opacity: 1; }
 .categories-panel { grid-row: span 2; padding: 25px; }
-.donut { display: grid; width: 155px; height: 155px; place-content: center; margin: 25px auto; border-radius: 50%; background: conic-gradient(#3f7f8b 0 14.7%, #d69c45 14.7% 39.7%, #648a72 39.7% 60.2%, #bd654d 60.2% 84.3%, #8c7f72 84.3% 100%); box-shadow: inset 0 0 0 34px var(--surface); text-align: center; }
+.donut { display: grid; width: 174px; height: 174px; place-content: center; margin: 25px auto; border-radius: 50%; background: conic-gradient(var(--segments)); box-shadow: inset 0 0 0 36px var(--surface), 0 10px 24px rgba(36,53,44,.08); text-align: center; }
 .donut span, .donut small { z-index: 1; display: block; }
 .donut span { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; }
 .donut small { color: var(--muted); font-size: .7rem; }
 .legend-list { display: grid; gap: 11px; margin: 0; padding: 0; list-style: none; }
 .legend-list li { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 9px; font-size: .78rem; }
+.legend-copy { display: grid; gap: 1px; }
+.legend-copy small { color: var(--muted); font-size: .66rem; }
 .legend-list strong { font-size: .77rem; }
 .legend-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dot); }
 .water-glance, .attention-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 17px; padding: 22px 24px; }
