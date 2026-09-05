@@ -166,7 +166,7 @@ test("la arquitectura está preparada para GitHub Pages y Supabase sin claves se
   const migration = await readFile(new URL("../supabase/migrations/001_phase1_schema.sql", import.meta.url), "utf8");
   const workflow = await readFile(new URL("../.github/workflows/pages.yml", import.meta.url), "utf8");
 
-  assert.match(config, /dataSource:\s*"demo"/);
+  assert.match(config, /dataSource:\s*"supabase"/);
   assert.match(service, /dataSource === "supabase"/);
   assert.match(service, /rest\/v1\/rpc\/\$\{name\}/);
   for (const rpc of ["get_community_snapshot", "create_family", "create_expense", "create_water_reading"]) {
