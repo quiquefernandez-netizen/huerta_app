@@ -172,6 +172,12 @@ test("el perfil usa icono de usuario solo en Aero y conserva iniciales en Plano"
   assert.match(themes, /data-theme="aero"\][\s\S]*?\.profile-user-icon\s*\{[^}]*display:\s*block/);
 });
 
+test("Aero mantiene visible lo escrito en la contraseña", async () => {
+  const themes = await readFile(new URL("../frontend/css/themes.css", import.meta.url), "utf8");
+  assert.match(themes, /\[data-theme="aero"\] \.auth-form input\s*\{[^}]*color:\s*#f3f9ff/);
+  assert.match(themes, /\[data-theme="aero"\] \.auth-form input\s*\{[^}]*caret-color:/);
+});
+
 test("la arquitectura está preparada para GitHub Pages y Supabase sin claves secretas", async () => {
   const config = await readFile(new URL("../frontend/config.js", import.meta.url), "utf8");
   const service = await readFile(new URL("../frontend/js/services/data-service.js", import.meta.url), "utf8");
