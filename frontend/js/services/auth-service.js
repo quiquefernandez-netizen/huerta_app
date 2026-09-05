@@ -18,7 +18,7 @@ export class SupabaseAuthService {
     this.authUrl = `${this.baseUrl}/auth/v1`;
     this.functionsUrl = `${this.baseUrl}/functions/v1`;
     this.publishableKey = publishableKey;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
     this.localStorage = options.localStorage ?? globalThis.localStorage;
     this.sessionStorage = options.sessionStorage ?? globalThis.sessionStorage;
     this.now = options.now ?? (() => Date.now());

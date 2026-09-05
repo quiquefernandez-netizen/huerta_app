@@ -87,7 +87,7 @@ export class SupabaseDataService {
     if (url.protocol !== "https:") throw new Error("La URL de Supabase debe utilizar HTTPS.");
     this.baseUrl = url.href.replace(/\/$/, "");
     this.publishableKey = publishableKey;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
     this.getAccessToken = options.getAccessToken ?? (() => globalThis.HUERTA_AUTH_SESSION?.getAccessToken?.());
   }
 
