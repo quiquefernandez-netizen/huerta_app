@@ -78,7 +78,7 @@ Después de crear y probar los accesos, `dataSource` podrá cambiarse a `supabas
 
 La guía completa está en [supabase/README.md](supabase/README.md). En resumen: habilitar accesos anónimos, revisar y aplicar las migraciones, cargar `seed.sql` solo mientras se prueban datos ficticios, desplegar `unlock-access`, crear las credenciales iniciales fuera del repositorio y finalmente activar `dataSource: "supabase"` con la clave publicable.
 
-El backend remoto ya tiene las migraciones `001` a `009`, el seed ficticio y la función `unlock-access`. Todavía faltan habilitar los accesos anónimos y crear las dos contraseñas elegidas por la comunidad antes de activar el frontend.
+El backend remoto ya tiene las migraciones `001` a `010`, el seed ficticio y la función `unlock-access`. Los accesos anónimos están habilitados; todavía falta crear las dos contraseñas elegidas por la comunidad antes de activar el frontend.
 
 ## Publicar el frontend en GitHub Pages
 

@@ -68,7 +68,7 @@ test("la Edge Function verifica el JWT y usa la clave de servidor solo en backen
   assert.match(source, /RATE_LIMIT_PEPPER/);
   assert.match(source, /\/rest\/v1\/rpc\/unlock_access/);
   assert.match(source, /SUPABASE_SERVICE_ROLE_KEY/);
-  assert.doesNotMatch(source, /Authorization:\s*`Bearer \$\{serviceRoleKey\}`/);
+  assert.match(source, /Authorization:\s*`Bearer \$\{serviceRoleKey\}`/);
   assert.doesNotMatch(source, /console\.(log|error).*password/i);
 });
 

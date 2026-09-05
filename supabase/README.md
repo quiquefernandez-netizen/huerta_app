@@ -8,7 +8,7 @@ Este directorio contiene el backend versionado. Nada se aplica automáticamente 
 - `functions/unlock-access`: verifica el JWT anónimo, limita intentos y valida la contraseña solo en servidor.
 - `seed.sql`: cinco familias y movimientos exclusivamente ficticios; no contiene credenciales.
 
-Las nueve migraciones, el seed ficticio y la Edge Function están desplegados en el proyecto remoto `rdjcwroddkhmjtfocbdg`, sobre PostgreSQL 17. La función tiene configurados sus orígenes permitidos y un secreto aleatorio para limitar intentos. Falta habilitar Anonymous Sign-Ins, crear los accesos elegidos por la comunidad y realizar la prueba final antes de cambiar el frontend a modo Supabase.
+Las diez migraciones, el seed ficticio y la Edge Function están desplegados en el proyecto remoto `rdjcwroddkhmjtfocbdg`, sobre PostgreSQL 17. La función tiene configurados sus orígenes permitidos y un secreto aleatorio para limitar intentos. Anonymous Sign-Ins ya está habilitado y el flujo técnico de sesión y rechazo de credenciales inexistentes está verificado. Faltan crear los accesos elegidos por la comunidad y realizar la prueba final antes de cambiar el frontend a modo Supabase.
 
 ## Antes de desplegar
 
