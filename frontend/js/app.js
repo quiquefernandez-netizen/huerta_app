@@ -265,21 +265,19 @@ function renderWater() {
       <article class="tariff-card"><div><p>Tarifa de demostración</p><strong>${formatMoney(data.community.waterPriceCentsPerM3)}<small>/ m³</small></strong></div><span>Histórico preparado</span></article>
     </section>
     <section class="list-section">
-      <div class="list-section__heading"><div><p class="section-kicker">Por familia</p><h3>Últimas lecturas</h3></div>${isAdministrator() ? `<span class="help-label">Toca una tarjeta para añadir la siguiente</span>` : ""}</div>
+      <div class="list-section__heading"><div><p class="section-kicker">Por familia</p><h3>Últimas lecturas</h3></div><span class="help-label">Toca una tarjeta para añadir la siguiente</span></div>
       <div class="water-family-grid">${readings.length ? readings.map(({ family, reading }) => {
         const item = settlementByFamily.get(family.id);
         const usage = item?.usageM3 ?? 0;
         const cost = item?.amountCents ?? 0;
-        const cardTag = isAdministrator() ? "button" : "article";
-        const interaction = isAdministrator() ? ` type="button" data-water-family="${escapeHtml(family.id)}"` : "";
-        return `<${cardTag} class="water-family-card"${interaction}>
+        return `<button class="water-family-card" type="button" data-water-family="${escapeHtml(family.id)}">
           <span class="family-avatar" aria-hidden="true">${escapeHtml(familyMonogram(family))}</span>
           <span class="water-family-card__name"><strong>${escapeHtml(family.name)}</strong><small>Contador ${escapeHtml(reading.meterId.replace("con_", "").toUpperCase())}</small></span>
           <span class="reading-pair"><small>Lectura actual</small><strong>${formatDecimal(reading.readingM3)} m³</strong></span>
           <span class="usage-pill"><small>Consumo</small><strong>${formatDecimal(usage)} m³</strong></span>
           <span class="reading-cost"><small>Importe</small><strong>${formatMoney(cost)}</strong></span>
-          ${isAdministrator() ? icon("arrow") : ""}
-        </${cardTag}>`;
+          ${icon("arrow")}
+        </button>`;
       }).join("") : `<div class="empty-list"><strong>Aún no hay lecturas de agua.</strong><span>Administración debe preparar primero los contadores.</span></div>`}</div>
     </section>
     ${settlementState.error ? `<aside class="info-note info-note--warning">${icon("water")}<p><strong>Aún no se puede liquidar.</strong> ${escapeHtml(settlementState.error)}</p></aside>` : ""}
@@ -302,14 +300,14 @@ function renderTopbar(route) {
   if (isAdministrator() && route.id === "familias") {
     actions = `<button class="secondary-button" type="button" data-open-quota aria-label="Configurar cuota">${icon("coins")}<span class="action-label">Configurar cuota</span></button><button class="primary-button" type="button" data-demo-add="familia" aria-label="Añadir familia">${icon("plus")}<span class="action-label">Añadir familia</span></button>`;
   }
-  if (isAdministrator() && route.id === "gastos") {
+  if (route.id === "gastos") {
     actions = `<button class="secondary-button" type="button" data-open-assessment aria-label="Nueva derrama">${icon("people")}<span class="action-label">Nueva derrama</span></button><button class="primary-button" type="button" data-open-expense aria-label="Añadir gasto">${icon("plus")}<span class="action-label">Añadir gasto</span></button>`;
   }
   if (route.id === "agua") {
     const readings = latestWaterReadings();
     const settlement = waterSettlementState().preview;
     const canSettle = isAdministrator() && settlement && settlement.totalUsageM3 > 0;
-    actions = `${isAdministrator() && readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
+    actions = `${readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
   }
   document.querySelector("#page-title").textContent = route.label;
   document.querySelector("#page-context").textContent = contexts[route.id] ?? "Sección de la comunidad";
@@ -403,7 +401,7 @@ function openFamilyDialog(familyId) {
     <div class="dialog-family-summary">
       <div class="detail-highlight"><span class="family-avatar">${escapeHtml(familyMonogram(family))}</span><div><strong>${status.label}</strong><span>${family.members} miembros · Alta ${formatDate(family.joinedAt)}</span></div></div>
       <div class="detail-grid"><div><span>${status.label}</span><strong>${formatMoney(status.amountCents)}</strong></div><div><span>Aportaciones</span><strong>${formatMoney(account.contributionsCents)}</strong></div><div><span>Cuotas generadas</span><strong>${formatMoney(account.quotaChargesCents)}</strong></div><div><span>Agua liquidada</span><strong>${formatMoney(account.waterChargesCents)}</strong></div><div><span>Derramas</span><strong>${formatMoney(account.assessmentChargesCents)}</strong></div><div><span>Gastos adelantados</span><strong>${formatMoney(account.advanceCreditsCents)}</strong></div><div><span>Última lectura</span><strong>${water ? `${formatDecimal(water.readingM3)} m³` : "Sin lectura"}</strong></div></div>
-      <div class="dialog-section-heading"><div><span>Cuenta ${plan.year}</span><strong>Últimos movimientos</strong></div>${isAdministrator() ? `<button class="secondary-button" type="button" data-add-contribution="${escapeHtml(family.id)}">Registrar aportación</button>` : ""}</div>
+      <div class="dialog-section-heading"><div><span>Cuenta ${plan.year}</span><strong>Últimos movimientos</strong></div><button class="secondary-button" type="button" data-add-contribution="${escapeHtml(family.id)}">Registrar aportación</button></div>
       <div class="contribution-list">${ledgerEntries.length ? ledgerEntries.slice(0, 10).map((entry) => `<div><span><strong>${escapeHtml(entry.concept)}</strong><small>${formatDate(entry.date)} · ${escapeHtml(entry.type)}</small></span><strong class="ledger-amount ${entry.amountCents >= 0 ? "is-credit" : "is-charge"}">${entry.amountCents >= 0 ? "+" : ""}${formatMoney(entry.amountCents)}</strong></div>`).join("") : `<p class="empty-copy">Todavía no hay movimientos registrados.</p>`}</div>
       ${family.notes ? `<p class="family-note"><strong>Observación:</strong> ${escapeHtml(family.notes)}</p>` : ""}
       <p class="demo-disclaimer">Datos ficticios. Los cambios de esta demostración se borran al recargar.</p>

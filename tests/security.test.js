@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const authMigrationUrl = new URL("../supabase/migrations/002_auth_and_rls.sql", import.meta.url);
 const rpcMigrationUrl = new URL("../supabase/migrations/007_supabase_access_contracts.sql", import.meta.url);
+const sharedRecordingMigrationUrl = new URL("../supabase/migrations/011_allow_shared_recording.sql", import.meta.url);
 const auditMigrationUrl = new URL("../supabase/migrations/004_phase1_audit.sql", import.meta.url);
 const quotaMigrationUrl = new URL("../supabase/migrations/005_quota_and_water_settlement_batches.sql", import.meta.url);
 const accountsMigrationUrl = new URL("../supabase/migrations/006_family_accounts_expenses_and_assessments.sql", import.meta.url);
@@ -48,17 +49,24 @@ test("Normal y Administrador leen todos los datos comunitarios", async () => {
   assert.doesNotMatch(sql, /familias_select_own_or_admin|lecturas_select_own_or_admin/);
 });
 
-test("las escrituras comprueban administración tanto en RLS como en RPC", async () => {
+test("las operaciones sensibles son de administración y las altas compartidas siguen validadas", async () => {
   const authSql = await readFile(authMigrationUrl, "utf8");
   const rpcSql = await readFile(rpcMigrationUrl, "utf8");
+  const sharedRecordingSql = await readFile(sharedRecordingMigrationUrl, "utf8");
   for (const policy of ["familias_admin_write", "gastos_admin_write", "cuotas_admin_write", "lecturas_admin_write", "liquidaciones_admin_write"]) {
     const block = authSql.match(new RegExp(`create policy ${policy}[\\s\\S]*?with check \\([\\s\\S]*?\\);`, "i"))?.[0] ?? "";
     assert.match(block, /current_user_is_admin/);
   }
-  for (const rpc of ["create_family", "create_expense", "create_assessment", "create_contribution", "set_quota_plan", "create_water_reading", "create_water_settlement"]) {
+  for (const rpc of ["create_family", "set_quota_plan", "create_water_settlement"]) {
     const block = rpcSql.match(new RegExp(`create or replace function public\\.${rpc}[\\s\\S]*?\\n\\$\\$;`, "i"))?.[0] ?? "";
     assert.match(block, /current_user_is_admin/);
   }
+  for (const rpc of ["create_expense", "create_assessment", "create_contribution", "create_water_reading"]) {
+    const block = sharedRecordingSql.match(new RegExp(`create or replace function public\\.${rpc}[\\s\\S]*?\\n\\$\\$;`, "i"))?.[0] ?? "";
+    assert.match(block, /security definer/);
+    assert.match(block, /current_user_is_active/);
+  }
+  assert.match(sharedRecordingSql, /revoke insert, update, delete on table[\s\S]*public\.aportaciones/);
 });
 
 test("la Edge Function verifica el JWT y usa la clave de servidor solo en backend", async () => {

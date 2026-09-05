@@ -9,11 +9,14 @@ La comunidad tendrá dos perfiles de acceso: Normal con contraseña compartida y
 | Consultar toda la información comunitaria | Sí | Sí |
 | Ver todas las familias, cuotas y aportaciones | Sí | Sí |
 | Ver todos los gastos, contadores y consumos | Sí | Sí |
-| Eliminar registros | No | Sí, con confirmación |
-| Confirmar una liquidación de agua | Por concretar | Sí |
-| Registrar un gasto y sus pagadores | Por concretar | Sí |
-| Crear una derrama y elegir participantes | Por concretar | Sí |
-| Otras acciones de creación, edición y configuración | Por concretar | Por concretar |
+| Registrar aportaciones | Sí | Sí |
+| Registrar un gasto y sus pagadores | Sí | Sí |
+| Crear una derrama y elegir participantes | Sí | Sí |
+| Registrar una lectura de agua | Sí | Sí |
+| Confirmar una liquidación de agua | No | Sí |
+| Crear familias y configurar cuotas | No | Sí |
+| Editar o eliminar registros | No | Sí, con confirmación |
+| Gestionar credenciales administrativas | No | Próxima mejora segura |
 
 No se solicitarán emails, enlaces mágicos ni cuentas individuales. No habrá filtros de lectura por familia. La consulta completa requiere haber entrado con contraseña.
 
@@ -31,7 +34,7 @@ El acceso normal compartido permite identificar el perfil o sesión, pero no ase
 
 La implementación local ya sustituye el diseño anterior de email y privacidad por familia. Incluye formulario de contraseña, sesión anónima por dispositivo, validación bcrypt en servidor, límite de cinco fallos por quince minutos, caducidad, revocación por credencial y RLS con lectura comunitaria completa para ambos perfiles.
 
-La demo continúa sin autenticación real porque `dataSource` sigue en `demo`. Las migraciones `001` a `010`, el seed ficticio, los secretos de función y `unlock-access` ya están desplegados. Anonymous Sign-Ins ya está habilitado. Antes de activar el frontend hay que crear fuera del repositorio al menos una credencial Normal y una Administrador. No se usarán contraseñas reales en el seed ni en los tests.
+El frontend usa Supabase y las migraciones `001` a `011`, el seed ficticio, los secretos de función y `unlock-access` están desplegados. Anonymous Sign-Ins ya está habilitado. Las altas permitidas al perfil Normal se ejecutan mediante RPC validadas en servidor; el cliente no obtiene permiso directo para editar o borrar tablas. No se usan contraseñas reales en el seed ni en los tests.
 
 ## Criterios de aceptación
 

@@ -46,12 +46,13 @@ test("las páginas de Fase 1 están registradas como disponibles", async () => {
   }
 });
 
-test("la interfaz oculta administración y altas al perfil normal", async () => {
+test("la interfaz deja al perfil normal registrar y reserva la administración", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
   assert.match(source, /route\.id !== "administracion" \|\| isAdministrator\(\)/);
-  assert.match(source, /isAdministrator\(\) && route\.id === "gastos"[\s\S]*?data-open-expense/);
-  assert.match(source, /isAdministrator\(\) && readings\.length \? `<button class="secondary-button" type="button" data-open-water/);
-  assert.match(source, /const cardTag = isAdministrator\(\) \? "button" : "article"/);
+  assert.match(source, /if \(route\.id === "gastos"\)[\s\S]*?data-open-expense/);
+  assert.match(source, /readings\.length \? `<button class="secondary-button" type="button" data-open-water/);
+  assert.match(source, /data-add-contribution="\$\{escapeHtml\(family\.id\)\}"/);
+  assert.match(source, /isAdministrator\(\) \? `<button class="primary-button" type="button" data-open-water-settlement/);
   assert.match(source, /profileButton\.querySelector\("small"\)\.textContent = isAdministrator\(\) \? "Administrador" : "Perfil normal"/);
 });
 
