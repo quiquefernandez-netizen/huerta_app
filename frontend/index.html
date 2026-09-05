@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#214e3b">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="description" content="Panel de demostración para la gestión sencilla de una pequeña comunidad.">
     <title>Panel de la comunidad</title>
     <link rel="icon" type="image/png" href="./assets/icon-192.png">
@@ -38,6 +40,7 @@
           </div>
           <div class="topbar__tools">
             <div class="topbar-actions" id="topbar-actions"></div>
+            <button class="install-app-button" id="install-app-button" type="button" hidden>Instalar</button>
             <button class="profile-button" type="button" data-open-appearance aria-label="Abrir perfil y apariencia">
               <span class="profile-avatar" aria-hidden="true"><span data-profile-initials>DR</span><svg class="profile-user-icon"><use href="#icon-user"></use></svg></span>
               <span class="profile-button__text"><strong>Demo Roble</strong><small>Administrador</small></span>
@@ -84,6 +87,25 @@
     </svg>
     <script src="./config.js"></script>
     <script>
+      const installButton = document.querySelector("#install-app-button");
+      let deferredInstallPrompt;
+
+      window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        installButton.hidden = false;
+      });
+
+      installButton.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = undefined;
+        installButton.hidden = true;
+      });
+
+      window.addEventListener("appinstalled", () => { installButton.hidden = true; });
+
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js", { scope: "./" }).catch((error) => console.warn("No se pudo preparar la aplicación para instalar.", error)));
       }

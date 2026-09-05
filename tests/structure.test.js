@@ -89,6 +89,8 @@ test("la instalación PWA registra un service worker e iconos de Android", async
   const worker = await readFile(new URL("../frontend/service-worker.js", import.meta.url), "utf8");
   assert.match(html, /serviceWorker\.register\("\.\/service-worker\.js"/);
   assert.match(html, /apple-touch-icon/);
+  assert.match(html, /id="install-app-button"/);
+  assert.match(html, /beforeinstallprompt/);
   assert.match(worker, /self\.addEventListener\("install"/);
   assert.match(worker, /self\.addEventListener\("fetch"/);
 });
