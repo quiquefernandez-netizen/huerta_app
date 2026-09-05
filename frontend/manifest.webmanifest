@@ -1,6 +1,6 @@
 {
-  "name": "Panel de la comunidad",
-  "short_name": "Comunidad",
+  "name": "La Huerta",
+  "short_name": "La Huerta",
   "start_url": "./#inicio",
   "display": "standalone",
   "background_color": "#f5f3ec",

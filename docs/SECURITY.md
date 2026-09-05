@@ -31,7 +31,7 @@ El acceso normal compartido permite identificar el perfil o sesión, pero no ase
 
 La implementación local ya sustituye el diseño anterior de email y privacidad por familia. Incluye formulario de contraseña, sesión anónima por dispositivo, validación bcrypt en servidor, límite de cinco fallos por quince minutos, caducidad, revocación por credencial y RLS con lectura comunitaria completa para ambos perfiles.
 
-La demo continúa sin autenticación real ni conexiones remotas porque `dataSource` sigue en `demo`. Antes de activarla hay que desplegar las migraciones y la Edge Function, habilitar Anonymous Sign-Ins y crear fuera del repositorio al menos una credencial Normal y una Administrador. No se usarán contraseñas reales en el seed ni en los tests.
+La demo continúa sin autenticación real porque `dataSource` sigue en `demo`. Las migraciones `001` a `009`, el seed ficticio, los secretos de función y `unlock-access` ya están desplegados. Antes de activar el frontend hay que habilitar Anonymous Sign-Ins y crear fuera del repositorio al menos una credencial Normal y una Administrador. No se usarán contraseñas reales en el seed ni en los tests.
 
 ## Criterios de aceptación
 

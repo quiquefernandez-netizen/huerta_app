@@ -2,5 +2,5 @@
 globalThis.APP_CONFIG = {
   dataSource: "demo",
   supabaseUrl: "https://rdjcwroddkhmjtfocbdg.supabase.co",
-  supabasePublishableKey: ""
+  supabasePublishableKey: "sb_publishable_XU4MtHC3FHU-Bl3BzpdhQw_FMDMfrKs"
 };

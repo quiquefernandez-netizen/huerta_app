@@ -7,7 +7,7 @@ La aplicación admite dos direcciones visuales sobre la misma estructura:
 - **Plano:** nombre del diseño actual. Está disponible y sigue siendo provisional.
 - **Aero:** cristal nocturno inspirado en el lenguaje visual Aero de Windows Vista. Está disponible.
 
-El nombre provisional anterior se ha retirado de la interfaz. El producto queda identificado de forma neutra como «la comunidad» mientras Dani trabaja el nombre definitivo. Desde septiembre de 2026 se prueba una primera interpretación digital de su símbolo; continúa siendo una propuesta y no un cierre de identidad.
+El nombre de producto continúa retirado de la interfaz visible: el panel se identifica de forma neutra como «la comunidad» mientras Dani trabaja el nombre definitivo. Para facilitar la instalación en móvil, el manifiesto PWA usa provisionalmente **La Huerta** como nombre y nombre corto de la aplicación instalada. Desde septiembre de 2026 se prueba una primera interpretación digital de su símbolo; continúa siendo una propuesta y no un cierre de identidad.
 
 ## Concepto de logo de Dani
 
@@ -21,7 +21,7 @@ La propuesta se muestra en la barra lateral, la cabecera móvil, el acceso, el f
 - el tono final del rosa y si el líquido debe ser una franja o un relleno continuo;
 - si necesita una variante monocroma y otra específica para fondos oscuros.
 
-La cabecera ya no repite un saludo, el nombre del producto ni un título grande dentro de cada vista. El nombre de la sección, su contexto y las acciones principales comparten una barra compacta; en móvil el contexto se oculta y los botones conservan una superficie táctil de 40 px para recuperar espacio sin perder claridad. En escritorio la barra lateral muestra solo el símbolo y reduce en 30 px el espacio anterior a la navegación.
+La navegación no ocupa una barra superior: en escritorio se mantiene en la barra lateral y en móvil en la barra inferior. Inicio abre directamente con el resumen. En las demás secciones, el título y las acciones pertenecen al propio contenido, siguiendo una jerarquía más directa. El perfil se integra al pie de la barra lateral y, en móvil, aparece como un control circular independiente para no crear una segunda barra.
 
 ## Tema Plano
 

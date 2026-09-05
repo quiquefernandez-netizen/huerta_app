@@ -6,7 +6,7 @@ Prototipo navegable de una aplicación sencilla para gestionar una pequeña comu
 
 ## Estado actual
 
-Decisión vigente de acceso: dos perfiles, Normal con contraseña compartida y Administrador con posibilidad de varias contraseñas, con consulta de toda la comunidad para ambos y borrado exclusivo de administración. La implementación local ya usa sesiones anónimas de Supabase y valida las contraseñas únicamente en servidor; falta desplegarla y crear las credenciales elegidas por la comunidad. Ver [acceso y permisos](docs/SECURITY.md).
+Decisión vigente de acceso: dos perfiles, Normal con contraseña compartida y Administrador con posibilidad de varias contraseñas, con consulta de toda la comunidad para ambos y borrado exclusivo de administración. El esquema, los datos demo y la función segura de acceso ya están desplegados en Supabase; faltan habilitar el acceso anónimo y crear las credenciales elegidas por la comunidad. Ver [acceso y permisos](docs/SECURITY.md).
 
 Esta primera iteración cubre solo la base visual de la **Fase 1**:
 
@@ -22,10 +22,10 @@ Esta primera iteración cubre solo la base visual de la **Fase 1**:
 - Capa de acceso a datos intercambiable entre datos demo y Supabase.
 - Altas de familias, gastos y lecturas a través del servicio, con estado de guardado y error recuperable.
 - Pantalla de acceso por contraseña, sesión recordable y cierre de sesión preparada para Supabase.
-- Esquema relacional, RLS, RPC, Edge Function y seed ficticio de Fase 1 preparados para Supabase.
+- Esquema relacional, RLS, RPC, Edge Function y seed ficticio de Fase 1 desplegados en Supabase.
 - Auditoría automática preparada para altas, cambios y borrados relevantes.
 
-Mientras `dataSource` siga en `demo`, los cambios realizados desde los formularios viven solo en memoria y se borran al recargar. No se ha modificado todavía el proyecto remoto ni se han implementado banco, conciliación, propuestas, votaciones, reuniones, actas ni documentos.
+Mientras `dataSource` siga en `demo`, los cambios realizados desde los formularios viven solo en memoria y se borran al recargar. El backend remoto ya contiene únicamente datos ficticios, pero el frontend no se activará hasta completar y probar los dos accesos. No se han implementado banco, conciliación, propuestas, votaciones, reuniones, actas ni documentos.
 
 La apariencia se cambia desde el botón de perfil. La preferencia es local al navegador y no contiene datos personales. Los temas Plano y Aero están disponibles; Aero reinterpreta el cristal nocturno de Windows Vista sin reutilizar recursos del sistema operativo.
 
@@ -72,13 +72,13 @@ globalThis.APP_CONFIG = {
 };
 ```
 
-Después de desplegar y probar el backend, `dataSource` podrá cambiarse a `supabase` y añadirse la clave `sb_publishable_...`. La URL y la clave publicable son configuración pública del cliente; nunca deben añadirse claves secretas, `service_role`, contraseñas ni cadenas de conexión.
+Después de crear y probar los accesos, `dataSource` podrá cambiarse a `supabase`. La URL y la clave publicable ya están preparadas en la configuración pública del cliente; nunca deben añadirse claves secretas, `service_role`, contraseñas ni cadenas de conexión.
 
 ## Activar Supabase
 
 La guía completa está en [supabase/README.md](supabase/README.md). En resumen: habilitar accesos anónimos, revisar y aplicar las migraciones, cargar `seed.sql` solo mientras se prueban datos ficticios, desplegar `unlock-access`, crear las credenciales iniciales fuera del repositorio y finalmente activar `dataSource: "supabase"` con la clave publicable.
 
-El código local está preparado y probado, pero esta iteración no modifica el proyecto remoto: todavía faltan las dos contraseñas que debe elegir la comunidad y la clave publicable del proyecto.
+El backend remoto ya tiene las migraciones `001` a `009`, el seed ficticio y la función `unlock-access`. Todavía faltan habilitar los accesos anónimos y crear las dos contraseñas elegidas por la comunidad antes de activar el frontend.
 
 ## Publicar el frontend en GitHub Pages
 

@@ -21,29 +21,19 @@
           <span class="brand__mark" aria-hidden="true"><img src="./assets/logo-dani-concept.png" alt=""></span>
         </a>
         <nav class="desktop-nav" data-navigation></nav>
-        <div class="sidebar__note">
-          <span class="status-dot" aria-hidden="true"></span>
-          <div><strong>Datos de demostración</strong><small>Ningún dato es real</small></div>
+        <div class="sidebar__footer">
+          <button class="profile-button profile-button--sidebar" type="button" data-open-appearance aria-label="Abrir perfil y apariencia">
+            <span class="profile-avatar" aria-hidden="true"><span data-profile-initials>DR</span><svg class="profile-user-icon"><use href="#icon-user"></use></svg></span>
+            <span class="profile-button__text"><strong>Demo Roble</strong><small>Administrador</small></span>
+          </button>
+          <div class="sidebar__note">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div><strong>Datos de demostración</strong><small>Ningún dato es real</small></div>
+          </div>
         </div>
       </aside>
 
       <div class="app-main">
-        <header class="topbar">
-          <div class="topbar__route">
-            <a class="topbar__home" href="#inicio" aria-label="Ir a Inicio">
-              <img class="topbar__logo" src="./assets/logo-dani-concept.png" alt="">
-            </a>
-            <div><h1 id="page-title">Inicio</h1><p id="page-context">Resumen de la comunidad</p></div>
-          </div>
-          <div class="topbar__tools">
-            <div class="topbar-actions" id="topbar-actions"></div>
-            <button class="profile-button" type="button" data-open-appearance aria-label="Abrir perfil y apariencia">
-              <span class="profile-avatar" aria-hidden="true"><span data-profile-initials>DR</span><svg class="profile-user-icon"><use href="#icon-user"></use></svg></span>
-              <span class="profile-button__text"><strong>Demo Roble</strong><small>Administrador</small></span>
-            </button>
-          </div>
-        </header>
-
         <main id="main-content" tabindex="-1">
           <div class="loading-state" id="loading-state" role="status">
             <span class="spinner" aria-hidden="true"></span>
@@ -55,6 +45,10 @@
     </div>
 
     <nav class="mobile-nav" aria-label="Navegación móvil" data-mobile-navigation></nav>
+    <button class="profile-button profile-button--mobile" type="button" data-open-appearance aria-label="Abrir perfil y apariencia">
+      <span class="profile-avatar" aria-hidden="true"><span data-profile-initials>DR</span><svg class="profile-user-icon"><use href="#icon-user"></use></svg></span>
+      <span class="profile-button__text"><strong>Demo Roble</strong><small>Administrador</small></span>
+    </button>
     <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
     <dialog class="app-dialog" id="app-dialog" aria-labelledby="dialog-title">
       <div id="dialog-content"></div>
