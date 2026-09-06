@@ -125,6 +125,29 @@ export class DemoDataService {
     };
     return clone(created);
   }
+
+  async importBankMovements({ source, rows }) {
+    await delay(240);
+    const known = new Set((this.data.bankMovements ?? []).map((item) => item.fingerprint));
+    const imported = [];
+    let duplicates = 0;
+    for (const row of rows ?? []) {
+      if (known.has(row.fingerprint)) { duplicates += 1; continue; }
+      const movement = { ...clone(row), id: `mov_demo_${crypto.randomUUID()}`, source, assignmentStatus: "PENDIENTE", familyId: null, expenseId: null };
+      known.add(row.fingerprint);
+      imported.push(movement);
+    }
+    this.data.bankMovements = [...imported, ...(this.data.bankMovements ?? [])];
+    return { batchId: `batch_demo_${crypto.randomUUID()}`, source, rows: (rows ?? []).length, imported: imported.length, duplicates };
+  }
+
+  async assignBankMovement({ id, familyId = null, expenseId = null, notes = "" }) {
+    await delay(180);
+    const movement = (this.data.bankMovements ?? []).find((item) => item.id === id);
+    if (!movement) throw new Error("El movimiento bancario no existe.");
+    Object.assign(movement, { familyId, expenseId, notes, assignmentStatus: familyId || expenseId ? "ASIGNADO" : "PENDIENTE" });
+    return clone(movement);
+  }
 }
 
 export class SupabaseDataService {
@@ -269,6 +292,14 @@ export class SupabaseDataService {
       p_period_start: settlement.periodStart,
       p_period_end: settlement.periodEnd
     });
+  }
+
+  importBankMovements({ source, rows }) {
+    return this.rpc("import_bank_movements", { p_source: source, p_rows: rows });
+  }
+
+  assignBankMovement({ id, familyId = null, expenseId = null, notes = "" }) {
+    return this.rpc("assign_bank_movement", { p_id: id, p_family_id: familyId, p_expense_id: expenseId, p_notes: notes });
   }
 }
 
