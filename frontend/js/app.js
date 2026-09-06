@@ -251,6 +251,10 @@ function latestWaterReadings() {
   }).filter((item) => item.reading);
 }
 
+function isWaterReadingSettled(reading) {
+  return (data.waterSettlements ?? []).some((settlement) => (settlement.items ?? []).some((item) => item.familyId === reading.familyId && item.meterId === reading.meterId && Number(item.currentReadingM3) === Number(reading.readingM3)));
+}
+
 function renderWater() {
   const readings = latestWaterReadings();
   const settlementState = waterSettlementState();
@@ -272,19 +276,19 @@ function renderWater() {
       <article class="tariff-card"><div><p>Tarifa actual</p><strong>${formatMoney(tariff.priceCentsPerM3)}<small>/ m³</small></strong></div><span>Desde ${formatDate(tariff.validFrom)}</span></article>
     </section>
     <section class="list-section">
-      <div class="list-section__heading"><div><p class="section-kicker">Por familia</p><h3>Últimas lecturas</h3></div><span class="help-label">Toca una tarjeta para añadir la siguiente</span></div>
+      <div class="list-section__heading"><div><p class="section-kicker">Por familia</p><h3>Últimas lecturas</h3></div><span class="help-label">Toca una tarjeta para ver el historial</span></div>
       <div class="water-family-grid">${readings.length ? readings.map(({ family, reading }) => {
         const item = settlementByFamily.get(family.id);
         const usage = item?.usageM3 ?? 0;
         const cost = item?.amountCents ?? 0;
-        return `<div class="water-family-entry"><button class="water-family-card" type="button" data-water-family="${escapeHtml(family.id)}">
+        return `<div class="water-family-entry"><button class="water-family-card" type="button" data-water-history="${escapeHtml(family.id)}">
           <span class="family-avatar" aria-hidden="true">${escapeHtml(familyMonogram(family))}</span>
           <span class="water-family-card__name"><strong>${escapeHtml(family.name)}</strong><small>Contador ${escapeHtml(reading.meterId.replace("con_", "").toUpperCase())}</small></span>
           <span class="reading-pair"><small>Lectura actual</small><strong>${formatDecimal(reading.readingM3)} m³</strong></span>
           <span class="usage-pill"><small>Consumo</small><strong>${formatDecimal(usage)} m³</strong></span>
           <span class="reading-cost"><small>Importe</small><strong>${formatMoney(cost)}</strong></span>
           ${icon("arrow")}
-        </button><button class="water-correction-button" type="button" data-edit-water-reading="${escapeHtml(reading.id)}">Corregir lectura</button></div>`;
+        </button></div>`;
       }).join("") : `<div class="empty-list"><strong>Aún no hay lecturas de agua.</strong><span>Administración debe preparar primero los contadores.</span></div>`}</div>
     </section>
     ${settlementState.error ? `<aside class="info-note info-note--warning">${icon("water")}<p><strong>Aún no se puede liquidar.</strong> ${escapeHtml(settlementState.error)}</p></aside>` : ""}
@@ -554,6 +558,13 @@ function openWaterCorrectionDialog(readingId) {
   openDialog(`${dialogHeader("Corrección", `Lectura de ${escapeHtml(family.name)}`)}<form class="dialog-form" id="water-correction-form"><input type="hidden" name="id" value="${escapeHtml(reading.id)}"><p class="form-help">No se puede modificar una lectura ya liquidada.</p><label>Lectura acumulada (m³)<input name="reading" required inputmode="decimal" value="${formatDecimal(reading.readingM3)}"></label><label>Fecha<input name="date" required type="date" value="${escapeHtml(reading.date)}"></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar corrección</button></div></form>`);
 }
 
+function openWaterHistoryDialog(familyId) {
+  const family = data.families.find((item) => item.id === familyId);
+  if (!family) return;
+  const readings = data.waterReadings.filter((item) => item.familyId === familyId).sort((a, b) => b.date.localeCompare(a.date));
+  openDialog(`${dialogHeader("Contador individual", escapeHtml(family.name))}<div class="water-history"><p class="form-help">Las lecturas liquidadas quedan protegidas. Puedes corregir una pendiente si se introdujo por error.</p>${readings.map((reading) => { const settled = isWaterReadingSettled(reading); return `<article class="water-history__row${settled ? " is-settled" : ""}"><div><strong>${formatDecimal(reading.readingM3)} m³</strong><small>${formatDate(reading.date)} · ${settled ? "Liquidada" : "Pendiente de liquidar"}</small></div>${settled ? `<span class="reading-status">Liquidada</span>` : `<button class="secondary-button" type="button" data-edit-water-reading="${escapeHtml(reading.id)}">Corregir</button>`}</article>`; }).join("")}<div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cerrar</button><button class="primary-button" type="button" data-water-history-add="${escapeHtml(familyId)}">Nueva lectura</button></div></div>`);
+}
+
 function parseEuroInput(value) {
   const normalized = value.trim().replace(/\s/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", ".");
   const amount = Number(normalized);
@@ -567,6 +578,8 @@ function centsInputValue(cents) {
 function bindDialogInteractions() {
   const dialog = document.querySelector("#app-dialog");
   dialog.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => dialog.close()));
+  dialog.querySelector("[data-water-history-add]")?.addEventListener("click", (event) => { dialog.close(); openWaterDialog(event.currentTarget.dataset.waterHistoryAdd); });
+  dialog.querySelectorAll("[data-edit-water-reading]").forEach((button) => button.addEventListener("click", () => openWaterCorrectionDialog(button.dataset.editWaterReading)));
   dialog.querySelector("[data-add-contribution]")?.addEventListener("click", (event) => {
     const familyId = event.currentTarget.dataset.addContribution;
     dialog.close();
@@ -971,8 +984,7 @@ function bindInteractions() {
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
   document.querySelector("[data-open-water]")?.addEventListener("click", () => openWaterDialog());
   document.querySelector("[data-open-water-settlement]")?.addEventListener("click", openWaterSettlementDialog);
-  document.querySelectorAll("[data-water-family]").forEach((button) => button.addEventListener("click", () => openWaterDialog(button.dataset.waterFamily)));
-  document.querySelectorAll("[data-edit-water-reading]").forEach((button) => button.addEventListener("click", () => openWaterCorrectionDialog(button.dataset.editWaterReading)));
+  document.querySelectorAll("[data-water-history]").forEach((button) => button.addEventListener("click", () => openWaterHistoryDialog(button.dataset.waterHistory)));
   document.querySelectorAll("[data-expense-filter]").forEach((button) => button.addEventListener("click", () => { expenseFilter = button.dataset.expenseFilter; renderRoute(); }));
   document.querySelector("[data-open-appearance]")?.addEventListener("click", openAppearanceDialog);
 }

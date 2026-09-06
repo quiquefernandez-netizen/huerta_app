@@ -223,6 +223,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .water-family-grid { display: grid; gap: 10px; }
 .water-family-entry { display: grid; gap: 4px; }
 .water-correction-button { justify-self: end; padding: 5px 10px; border: 0; background: transparent; color: var(--forest-700); font-size: .72rem; font-weight: 800; cursor: pointer; }
+.water-history { display: grid; gap: 8px; padding: 20px 25px 25px; }
+.water-history__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 12px; }
+.water-history__row.is-settled { border-color: #b9d8ca; background: #edf6f0; }
+.water-history__row strong, .water-history__row small { display: block; }
+.water-history__row small { margin-top: 2px; color: var(--muted); font-size: .72rem; }
+.reading-status { padding: 4px 8px; border-radius: 999px; background: #d8ecdf; color: #245a40; font-size: .66rem; font-weight: 800; }
 .water-family-card { display: grid; grid-template-columns: auto minmax(150px,1.3fr) repeat(3,minmax(95px,.8fr)) auto; align-items: center; gap: 16px; min-height: 86px; padding: 14px 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: inherit; text-align: left; cursor: pointer; transition: border-color .16s, transform .16s, box-shadow .16s; }
 .water-family-card:hover { border-color: #bdcfc4; box-shadow: 0 10px 25px rgba(36,53,44,.06); transform: translateY(-1px); }
 .water-family-card__name strong, .water-family-card__name small, .reading-pair strong, .reading-pair small, .usage-pill strong, .usage-pill small, .reading-cost strong, .reading-cost small { display: block; }
@@ -477,6 +483,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .dialog-tabs { padding: 13px 18px 0; }
   .dialog-family-summary, .dialog-form { padding: 19px 18px 22px; }
   .settlement-dialog { padding: 19px 18px 22px; }
+  .water-history { padding: 19px 18px 22px; }
   .dialog-section-heading { align-items: stretch; flex-direction: column; }
   .dialog-section-heading .secondary-button { width: 100%; }
   .form-row { grid-template-columns: 1fr; }
