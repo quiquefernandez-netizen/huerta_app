@@ -46,6 +46,14 @@ export class DemoDataService {
     return clone(created);
   }
 
+  async updateWaterReading(reading) {
+    await delay(240);
+    const index = this.data.waterReadings.findIndex((item) => item.id === reading.id);
+    if (index < 0) throw new Error("La lectura no existe.");
+    this.data.waterReadings[index] = { ...this.data.waterReadings[index], ...clone(reading) };
+    return clone(this.data.waterReadings[index]);
+  }
+
   async createContribution(contribution) {
     await delay(240);
     const created = { ...clone(contribution), id: `apo_demo_${crypto.randomUUID()}` };

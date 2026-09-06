@@ -216,6 +216,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .tariff-card > span { position: absolute; right: 13px; bottom: 12px; padding: 3px 7px; border-radius: 99px; background: rgba(255,255,255,.12); color: rgba(255,255,255,.72); font-size: .62rem; }
 .help-label { color: var(--muted); font-size: .72rem; }
 .water-family-grid { display: grid; gap: 10px; }
+.water-family-entry { display: grid; gap: 4px; }
+.water-correction-button { justify-self: end; padding: 5px 10px; border: 0; background: transparent; color: var(--forest-700); font-size: .72rem; font-weight: 800; cursor: pointer; }
 .water-family-card { display: grid; grid-template-columns: auto minmax(150px,1.3fr) repeat(3,minmax(95px,.8fr)) auto; align-items: center; gap: 16px; min-height: 86px; padding: 14px 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: inherit; text-align: left; cursor: pointer; transition: border-color .16s, transform .16s, box-shadow .16s; }
 .water-family-card:hover { border-color: #bdcfc4; box-shadow: 0 10px 25px rgba(36,53,44,.06); transform: translateY(-1px); }
 .water-family-card__name strong, .water-family-card__name small, .reading-pair strong, .reading-pair small, .usage-pill strong, .usage-pill small, .reading-cost strong, .reading-cost small { display: block; }

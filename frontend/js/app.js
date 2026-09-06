@@ -277,14 +277,14 @@ function renderWater() {
         const item = settlementByFamily.get(family.id);
         const usage = item?.usageM3 ?? 0;
         const cost = item?.amountCents ?? 0;
-        return `<button class="water-family-card" type="button" data-water-family="${escapeHtml(family.id)}">
+        return `<div class="water-family-entry"><button class="water-family-card" type="button" data-water-family="${escapeHtml(family.id)}">
           <span class="family-avatar" aria-hidden="true">${escapeHtml(familyMonogram(family))}</span>
           <span class="water-family-card__name"><strong>${escapeHtml(family.name)}</strong><small>Contador ${escapeHtml(reading.meterId.replace("con_", "").toUpperCase())}</small></span>
           <span class="reading-pair"><small>Lectura actual</small><strong>${formatDecimal(reading.readingM3)} m³</strong></span>
           <span class="usage-pill"><small>Consumo</small><strong>${formatDecimal(usage)} m³</strong></span>
           <span class="reading-cost"><small>Importe</small><strong>${formatMoney(cost)}</strong></span>
           ${icon("arrow")}
-        </button>`;
+        </button><button class="water-correction-button" type="button" data-edit-water-reading="${escapeHtml(reading.id)}">Corregir lectura</button></div>`;
       }).join("") : `<div class="empty-list"><strong>Aún no hay lecturas de agua.</strong><span>Administración debe preparar primero los contadores.</span></div>`}</div>
     </section>
     ${settlementState.error ? `<aside class="info-note info-note--warning">${icon("water")}<p><strong>Aún no se puede liquidar.</strong> ${escapeHtml(settlementState.error)}</p></aside>` : ""}
@@ -541,6 +541,13 @@ function openWaterDialog(familyId = data.families.find((family) => family.active
       <p class="form-error" role="alert" hidden></p>
       <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">${saveLabel}</button></div>
     </form>`);
+}
+
+function openWaterCorrectionDialog(readingId) {
+  const reading = data.waterReadings.find((item) => item.id === readingId);
+  const family = data.families.find((item) => item.id === reading?.familyId);
+  if (!reading || !family) return;
+  openDialog(`${dialogHeader("Corrección", `Lectura de ${escapeHtml(family.name)}`)}<form class="dialog-form" id="water-correction-form"><input type="hidden" name="id" value="${escapeHtml(reading.id)}"><p class="form-help">No se puede modificar una lectura ya liquidada.</p><label>Lectura acumulada (m³)<input name="reading" required inputmode="decimal" value="${formatDecimal(reading.readingM3)}"></label><label>Fecha<input name="date" required type="date" value="${escapeHtml(reading.date)}"></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar corrección</button></div></form>`);
 }
 
 function parseEuroInput(value) {
@@ -910,6 +917,11 @@ function bindDialogInteractions() {
       event.currentTarget.removeAttribute("aria-busy");
     }
   });
+  dialog.querySelector("#water-correction-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault(); const form = new FormData(event.currentTarget); const readingM3 = Number(String(form.get("reading")).replace(",", ".")); const error = event.currentTarget.querySelector(".form-error");
+    if (!Number.isFinite(readingM3) || readingM3 < 0) { error.textContent = "Escribe una lectura válida."; error.hidden = false; return; }
+    try { const updated = await service.updateWaterReading({ id: form.get("id"), date: form.get("date"), readingM3, observations: "" }); const index = data.waterReadings.findIndex((item) => item.id === updated.id); data.waterReadings[index] = { ...data.waterReadings[index], ...updated }; dialog.close(); renderRoute(); showToast("Lectura corregida correctamente."); } catch (saveError) { error.textContent = "No hemos podido corregir esa lectura. Puede estar liquidada o no encajar con las demás lecturas."; error.hidden = false; }
+  });
 }
 
 function openMoreDialog() {
@@ -956,6 +968,7 @@ function bindInteractions() {
   document.querySelector("[data-open-water]")?.addEventListener("click", () => openWaterDialog());
   document.querySelector("[data-open-water-settlement]")?.addEventListener("click", openWaterSettlementDialog);
   document.querySelectorAll("[data-water-family]").forEach((button) => button.addEventListener("click", () => openWaterDialog(button.dataset.waterFamily)));
+  document.querySelectorAll("[data-edit-water-reading]").forEach((button) => button.addEventListener("click", () => openWaterCorrectionDialog(button.dataset.editWaterReading)));
   document.querySelectorAll("[data-expense-filter]").forEach((button) => button.addEventListener("click", () => { expenseFilter = button.dataset.expenseFilter; renderRoute(); }));
   document.querySelector("[data-open-appearance]")?.addEventListener("click", openAppearanceDialog);
 }
