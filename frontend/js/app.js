@@ -492,7 +492,7 @@ function renderTopbar(route) {
   };
   let actions = "";
   if (isAdministrator() && route.id === "familias") {
-    actions = `<button class="secondary-button" type="button" data-open-quota aria-label="Configurar cuota">${icon("coins")}<span class="action-label">Configurar cuota</span></button><button class="primary-button" type="button" data-demo-add="familia" aria-label="Añadir familia">${icon("plus")}<span class="action-label">Añadir familia</span></button>`;
+    actions = `<button class="primary-button" type="button" data-demo-add="familia" aria-label="Añadir familia">${icon("plus")}<span class="action-label">Añadir familia</span></button>`;
   }
   if (route.id === "gastos") {
     actions = `<button class="secondary-button" type="button" data-open-assessment aria-label="Nueva derrama">${icon("people")}<span class="action-label">Nueva derrama</span></button><button class="primary-button" type="button" data-open-expense aria-label="Añadir gasto">${icon("plus")}<span class="action-label">Añadir gasto</span></button>`;

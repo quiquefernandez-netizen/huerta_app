@@ -56,6 +56,14 @@ test("la interfaz deja al perfil normal registrar y reserva la administración",
   assert.match(source, /profileButton\.querySelector\("small"\)\.textContent = isAdministrator\(\) \? "Administrador" : "Perfil normal"/);
 });
 
+test("la cuota se configura únicamente desde Administración", async () => {
+  const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const topbarBlock = source.match(/function renderTopbar[\s\S]*?function renderRoute/)?.[0] ?? "";
+  const adminBlock = source.match(/function renderAdministration[\s\S]*?function renderTopbar/)?.[0] ?? "";
+  assert.doesNotMatch(topbarBlock, /data-open-quota/);
+  assert.match(adminBlock, /data-open-quota/);
+});
+
 test("los movimientos bancarios guardados se pueden revisar y volver a editar", async () => {
   const app = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
   const migration = await readFile(new URL("../supabase/migrations/022_bank_category_assignments.sql", import.meta.url), "utf8");
@@ -161,9 +169,9 @@ test("agua y gastos explican los estados sin configuración inicial", async () =
   assert.match(source, /Antes de registrar un gasto, administración debe crear una categoría/);
 });
 
-test("la demo muestra cuota configurable, aportaciones y liquidación de agua", async () => {
+test("la aplicación muestra aportaciones, cuota administrativa y liquidación de agua", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
-  assert.match(source, /Configurar cuota/);
+  assert.match(source, /Cuota anual/);
   assert.match(source, /Registrar aportación/);
   assert.match(source, /Liquidar agua/);
   assert.match(source, /saldo de cada familia/i);
