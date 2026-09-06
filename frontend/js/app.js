@@ -148,7 +148,7 @@ function renderDashboard() {
       </article>
       <article class="panel categories-panel">
         <div class="panel__heading"><div><p class="section-kicker">Este año</p><h3>¿En qué gastamos?</h3></div></div>
-        <div class="donut" style="--segments:${expenseSegments}" role="img" aria-label="Reparto de gastos por categoría"><span>${formatMoney(categoryTotal)}</span><small>Total</small></div>
+        <div class="donut" style="--segments:${expenseSegments}" role="img" aria-label="Reparto de ${formatMoney(categoryTotal)} en gastos por categoría"><div><span>${formatMoney(categoryTotal)}</span><small>Total anual</small></div></div>
         <ul class="legend-list">${data.expenseCategories.map((category) => {
           const percentage = categoryTotal ? Math.round((category.amountCents / categoryTotal) * 100) : 0;
           return `<li><span class="legend-dot" style="--dot:${safeCssColor(category.color)}"></span><span class="legend-copy"><span>${escapeHtml(category.name)}</span><small>${percentage} % del gasto</small></span><strong>${formatMoney(category.amountCents)}</strong></li>`;

@@ -112,7 +112,8 @@ test("el reparto de gastos usa segmentos reales y porcentajes legibles", async (
   const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
   assert.match(source, /const expenseSegments/);
   assert.match(source, /del gasto/);
-  assert.match(styles, /conic-gradient\(var\(--segments\)\)/);
+  assert.match(styles, /conic-gradient\(from -90deg, var\(--segments\)\)/);
+  assert.match(styles, /\.donut > div/);
   assert.match(styles, /\.legend-copy small/);
 });
 

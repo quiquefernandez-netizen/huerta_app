@@ -94,16 +94,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .bar-chart__value { position: absolute; top: calc(100% - var(--bar-height) - 22px); opacity: 0; font-size: .66rem; white-space: nowrap; transition: opacity .15s; }
 .bar-chart__item:hover .bar-chart__value { opacity: 1; }
 .categories-panel { grid-row: span 2; padding: 25px; }
-.donut { display: grid; width: 174px; height: 174px; place-content: center; margin: 25px auto; border-radius: 50%; background: conic-gradient(var(--segments)); box-shadow: inset 0 0 0 36px var(--surface), 0 10px 24px rgba(36,53,44,.08); text-align: center; }
+.donut { display: grid; width: 188px; height: 188px; place-content: center; margin: 25px auto; border: 1px solid rgba(36,53,44,.08); border-radius: 50%; background: conic-gradient(from -90deg, var(--segments)); box-shadow: 0 12px 26px rgba(36,53,44,.09); text-align: center; }
+.donut > div { display: grid; width: 118px; height: 118px; place-content: center; padding: 10px; border-radius: 50%; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
 .donut span, .donut small { z-index: 1; display: block; }
-.donut span { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; }
-.donut small { color: var(--muted); font-size: .7rem; }
-.legend-list { display: grid; gap: 11px; margin: 0; padding: 0; list-style: none; }
-.legend-list li { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 9px; font-size: .78rem; }
+.donut span { font-family: var(--font-display); font-size: 1.08rem; font-weight: 700; line-height: 1.05; }
+.donut small { margin-top: 4px; color: var(--muted); font-size: .66rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.legend-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.legend-list li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: .78rem; }
+.legend-list li:last-child { border-bottom: 0; }
 .legend-copy { display: grid; gap: 1px; }
 .legend-copy small { color: var(--muted); font-size: .66rem; }
-.legend-list strong { font-size: .77rem; }
-.legend-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dot); }
+.legend-list strong { font-size: .77rem; white-space: nowrap; }
+.legend-dot { width: 10px; height: 10px; border: 2px solid var(--surface); border-radius: 50%; background: var(--dot); box-shadow: 0 0 0 1px var(--dot); }
 .water-glance, .attention-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 17px; padding: 22px 24px; }
 .water-glance__icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 16px; background: #e1eff1; color: var(--blue); }
 .water-glance h3, .attention-card h3 { font-size: 1.2rem; }
@@ -427,7 +429,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .bar-chart { height: 205px; gap: 7px; }
   .bar-chart__item small { font-size: .62rem; }
   .categories-panel { display: block; padding: 20px; }
-  .donut { margin: 22px auto; }
+  .donut { width: 178px; height: 178px; margin: 22px auto; }
+  .donut > div { width: 110px; height: 110px; }
   .water-glance, .attention-card { grid-template-columns: auto 1fr; padding: 18px; }
   .water-glance .text-link, .attention-card .text-link { grid-column: 2; }
   .mobile-nav { position: fixed; inset: auto 0 0; z-index: 50; display: grid; grid-template-columns: repeat(5, 1fr); min-height: 72px; padding: 7px max(8px, env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); border-top: 1px solid var(--line); background: rgba(255,255,255,.96); box-shadow: 0 -10px 28px rgba(36,53,44,.08); backdrop-filter: blur(14px); }
