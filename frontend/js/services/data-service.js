@@ -171,6 +171,15 @@ export class SupabaseDataService {
     });
   }
 
+  updateWaterReading(reading) {
+    return this.rpc("update_water_reading", {
+      p_reading_id: reading.id,
+      p_read_at: reading.date,
+      p_reading_m3: reading.readingM3,
+      p_observations: reading.observations ?? ""
+    });
+  }
+
   createContribution(contribution) {
     return this.rpc("create_contribution", {
       p_family_id: contribution.familyId,
