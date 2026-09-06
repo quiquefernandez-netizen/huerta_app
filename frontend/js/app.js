@@ -24,6 +24,7 @@ const loadingState = document.querySelector("#loading-state");
 let data;
 let expenseFilter = "Todas";
 let bankPreview = null;
+let bankRules = [];
 
 function icon(name, className = "icon") {
   return `<svg class="${className}" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
@@ -309,9 +310,11 @@ function renderBank() {
   return `${conciliation}${summary}${history}<aside class="info-note">${icon("bank")}<p><strong>Banco trabaja siempre con previsualización.</strong> La importación definitiva se habilita tras la revisión de administración.</p></aside>`;
 }
 
-function createBankPreview(rows, source) {
+async function createBankPreview(rows, source) {
   const normalized = normalizeBankRows(rows, { source });
-  bankPreview = { ...normalized, records: detectBankDuplicates(normalized.records, []) };
+  if (isAdministrator()) { try { bankRules = await service.listReconciliationRules(); } catch { bankRules = []; } }
+  const key = (value) => String(value ?? "").toLocaleUpperCase("es-ES").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
+  bankPreview = { ...normalized, records: detectBankDuplicates(normalized.records, []).map((record) => { const rule = bankRules.find((item) => item.active && key(record.concept).includes(key(item.pattern))); return { ...record, assignment: rule?.familyId ? `FAMILY:${rule.familyId}` : rule?.categoryName ? `CATEGORY:${rule.categoryName}` : "" }; }) };
   renderRoute();
 }
 
@@ -1066,11 +1069,11 @@ function bindInteractions() {
   document.querySelectorAll("[data-water-history]").forEach((button) => button.addEventListener("click", () => openWaterHistoryDialog(button.dataset.waterHistory)));
   document.querySelectorAll("[data-expense-filter]").forEach((button) => button.addEventListener("click", () => { expenseFilter = button.dataset.expenseFilter; renderRoute(); }));
   document.querySelector("[data-open-appearance]")?.addEventListener("click", openAppearanceDialog);
-  document.querySelector("[data-bank-demo]")?.addEventListener("click", () => createBankPreview([{ Fecha: "01/09/2026", Concepto: "TRANSFERENCIA FICTICIA", Importe: "100,00", Saldo: "2.500,00", Referencia: "DEMO-001" }, { Fecha: "02/09/2026", Concepto: "RECIBO DEMO", Importe: "-25,50", Saldo: "2.474,50", Referencia: "DEMO-002" }, { Fecha: "02/09/2026", Concepto: "RECIBO DEMO", Importe: "-25,50", Saldo: "2.474,50", Referencia: "DEMO-002" }, { Fecha: "", Concepto: "Fila ficticia incompleta", Importe: "10" }], "demo"));
+  document.querySelector("[data-bank-demo]")?.addEventListener("click", () => createBankPreview([{ Fecha: "01/09/2026", Concepto: "TRANSFERENCIA FICTICIA", Importe: "100,00", Saldo: "2.500,00", Referencia: "DEMO-001" }], "demo"));
   document.querySelector("[data-bank-file]")?.addEventListener("change", async (event) => {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
-    try { createBankPreview(await parseBankFile(file), file.name); }
+    try { await createBankPreview(await parseBankFile(file), file.name); }
     catch (error) { showToast(error.message || "No hemos podido leer ese extracto."); }
   });
   document.querySelector("[data-confirm-bank-import]")?.addEventListener("click", async (event) => {
