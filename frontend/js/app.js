@@ -302,6 +302,38 @@ function renderPlaceholder(title) {
   return `<section class="empty-page"><span>${icon("calendar", "empty-page__icon")}</span><p class="section-kicker">Próxima fase</p><h2>${title}</h2><p>Esta sección está prevista, pero aún no forma parte de esta primera iteración.</p><a href="#inicio" class="secondary-button">Volver a Inicio</a></section>`;
 }
 
+function reconciliationRuleTarget(rule) {
+  if (rule.familyName) return `Familia: ${rule.familyName}`;
+  if (rule.categoryName) return `Gasto: ${rule.categoryName}`;
+  const family = data.families.find((item) => item.id === rule.familyId);
+  if (family) return `Familia: ${family.name}`;
+  const category = data.expenseCategories.find((item) => item.id === rule.categoryId || item.name === rule.categoryName);
+  return category ? `Gasto: ${category.name}` : "Sin destino";
+}
+
+async function openBankRulesDialog() {
+  if (!isAdministrator()) return;
+  try { bankRules = await service.listReconciliationRules(); } catch (error) { showToast(error.message); bankRules = []; }
+  const familyOptions = data.families.filter((item) => item.active).map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("");
+  const categoryOptions = data.expenseCategories.map((item) => `<option value="${escapeHtml(item.id ?? item.name)}">${escapeHtml(item.name)}</option>`).join("");
+  const ruleRows = bankRules.length ? bankRules.map((rule) => `<article class="rule-row${rule.active ? "" : " is-disabled"}"><div><strong>${escapeHtml(rule.pattern)}</strong><small>${escapeHtml(reconciliationRuleTarget(rule))} · ${rule.matchType === "EXACT" ? "Coincidencia exacta" : "Contiene el texto"}</small></div><label class="switch-label"><input type="checkbox" data-rule-toggle="${escapeHtml(rule.id)}"${rule.active ? " checked" : ""}><span>${rule.active ? "Activa" : "Inactiva"}</span></label><button class="icon-button" type="button" data-rule-delete="${escapeHtml(rule.id)}" aria-label="Eliminar regla">${icon("trash")}</button></article>`).join("") : `<p class="empty-copy">Todavía no hay reglas. Añade una para que las próximas previsualizaciones propongan la asignación.</p>`;
+  openDialog(`${dialogHeader("Banco", "Reglas de conciliación")}<p class="form-help">Una regla activa propone automáticamente una familia o categoría cuando el concepto contiene el patrón indicado.</p><div class="rule-list">${ruleRows}</div><form class="dialog-form" id="reconciliation-rule-form"><h3>Nueva regla</h3><label>Texto del concepto<input name="pattern" required minlength="2" placeholder="Ej. IBERDROLA o AEAT"></label><div class="form-row"><label>Destino<select name="targetType"><option value="family">Familia</option><option value="category">Categoría de gasto</option></select></label><label>Coincidencia<select name="matchType"><option value="CONTAINS">Contiene el texto</option><option value="EXACT">Exacta</option></select></label></div><label data-rule-family-field>Familia<select name="familyId"><option value="">Selecciona una familia</option>${familyOptions}</select></label><label data-rule-category-field hidden>Categoría<select name="categoryId"><option value="">Selecciona una categoría</option>${categoryOptions}</select></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="primary-button" type="submit">Guardar regla</button></div></form>`);
+  const form = document.querySelector("#reconciliation-rule-form");
+  const targetType = form?.querySelector("[name='targetType']");
+  const syncTarget = () => { const family = form.querySelector("[data-rule-family-field]"); const category = form.querySelector("[data-rule-category-field]"); const isFamily = targetType.value === "family"; family.hidden = !isFamily; category.hidden = isFamily; family.querySelector("select").disabled = !isFamily; category.querySelector("select").disabled = isFamily; };
+  targetType?.addEventListener("change", syncTarget); syncTarget();
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault(); const values = new FormData(form); const error = form.querySelector(".form-error"); const isFamily = values.get("targetType") === "family";
+    try {
+      const categoryId = isFamily ? null : values.get("categoryId");
+      const created = await service.createReconciliationRule({ pattern: values.get("pattern"), matchType: values.get("matchType"), familyId: isFamily ? values.get("familyId") : null, categoryId: categoryId && data.expenseCategories.some((item) => item.id === categoryId) ? categoryId : null, categoryName: categoryId && !data.expenseCategories.some((item) => item.id === categoryId) ? categoryId : null, priority: 100 });
+      bankRules = [created, ...bankRules]; await openBankRulesDialog(); showToast("Regla guardada.");
+    } catch (saveError) { error.textContent = saveError.message || "No se ha podido guardar la regla."; error.hidden = false; }
+  });
+  document.querySelectorAll("[data-rule-toggle]").forEach((input) => input.addEventListener("change", async () => { try { await service.setReconciliationRuleActive(input.dataset.ruleToggle, input.checked); bankRules = await service.listReconciliationRules(); input.nextElementSibling.textContent = input.checked ? "Activa" : "Inactiva"; } catch (error) { input.checked = !input.checked; showToast(error.message); } }));
+  document.querySelectorAll("[data-rule-delete]").forEach((button) => button.addEventListener("click", async () => { if (!window.confirm("¿Eliminar esta regla de conciliación?")) return; try { await service.deleteReconciliationRule(button.dataset.ruleDelete); bankRules = bankRules.filter((rule) => rule.id !== button.dataset.ruleDelete); await openBankRulesDialog(); showToast("Regla eliminada."); } catch (error) { showToast(error.message); } }));
+}
+
 function renderBank() {
   const summary = bankPreview ? `<section class="inline-summary"><div><span>Movimientos válidos</span><strong>${bankPreview.records.length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Filas a revisar</span><strong>${bankPreview.errors.length}</strong></div><div><span>Listos para importar</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div></section><section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización local</p><h3>Revisa antes de importar</h3></div><button class="primary-button" type="button" data-confirm-bank-import>Confirmar importación</button></div><div class="bank-preview-list">${bankPreview.records.map((item) => `<article class="bank-preview-row${item.duplicate ? " is-duplicate" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)}${item.reference ? ` · ${escapeHtml(item.reference)}` : ""}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.duplicate ? "Duplicado" : "Nuevo"}</span></article>`).join("")}${bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Revisar</span></article>`).join("")}</div></section>` : `<section class="panel bank-empty"><p class="section-kicker">Importación manual</p><h2>Revisa el extracto antes de guardarlo</h2><p>Selecciona un .xls, .xlsx o CSV. Buscaremos la fila de encabezados del banco, normalizaremos los importes y separaremos duplicados antes de importarlo.</p><div class="page-actions"><label class="primary-button file-button">Añadir movimientos<input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label></div></section>`;
   const movements = (data.bankMovements ?? []).slice(0, 30);
@@ -363,7 +395,7 @@ async function parseBankFile(file) {
 }
 
 function renderAdministration() {
-  return `<section class="admin-grid"><article class="panel"><p class="section-kicker">Configuración</p><h2>Cuotas y agua</h2><p>Configura importes nuevos sin modificar las liquidaciones ya emitidas.</p><div class="page-actions"><button class="secondary-button" type="button" data-open-quota>${icon("coins")} Cuota anual</button><button class="secondary-button" type="button" data-open-water-tariff>${icon("water")} Tarifa de agua</button></div></article><article class="panel"><p class="section-kicker">Banco</p><h2>Reglas de conciliación</h2><p>Los conceptos repetidos, como IBERDROLA, se configurarán aquí una sola vez para proponer siempre la misma asignación.</p><button class="secondary-button" type="button" data-action="demo">Gestionar reglas</button></article><article class="panel"><p class="section-kicker">Accesos</p><h2>Credenciales</h2><p>La gestión de contraseñas administrativas se añadirá mediante una pantalla segura de servidor. Nunca se mostrarán ni guardarán en el navegador.</p></article></section>`;
+  return `<section class="admin-grid"><article class="panel"><p class="section-kicker">Configuración</p><h2>Cuotas y agua</h2><p>Configura importes nuevos sin modificar las liquidaciones ya emitidas.</p><div class="page-actions"><button class="secondary-button" type="button" data-open-quota>${icon("coins")} Cuota anual</button><button class="secondary-button" type="button" data-open-water-tariff>${icon("water")} Tarifa de agua</button></div></article><article class="panel"><p class="section-kicker">Banco</p><h2>Reglas de conciliación</h2><p>Los conceptos repetidos se configuran aquí una sola vez para proponer su asignación automáticamente.</p><button class="secondary-button" type="button" data-open-bank-rules>${icon("settings")} Gestionar reglas${bankRules.length ? ` · ${bankRules.length}` : ""}</button></article><article class="panel"><p class="section-kicker">Accesos</p><h2>Credenciales</h2><p>La gestión de contraseñas administrativas se añadirá mediante una pantalla segura de servidor. Nunca se mostrarán ni guardarán en el navegador.</p></article></section>`;
 }
 
 function renderTopbar(route) {
@@ -1060,6 +1092,7 @@ function bindInteractions() {
   document.querySelector("[data-demo-add='familia']")?.addEventListener("click", openFamilyCreateDialog);
   document.querySelector("[data-open-quota]")?.addEventListener("click", openQuotaDialog);
   document.querySelector("[data-open-water-tariff]")?.addEventListener("click", openWaterTariffDialog);
+  document.querySelector("[data-open-bank-rules]")?.addEventListener("click", openBankRulesDialog);
   document.querySelector("[data-open-expense]")?.addEventListener("click", openExpenseDialog);
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
   document.querySelectorAll("[data-edit-expense]").forEach((button) => button.addEventListener("click", () => openExpenseDialog(button.dataset.editExpense)));

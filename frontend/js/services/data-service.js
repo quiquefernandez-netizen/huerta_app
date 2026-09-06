@@ -148,6 +148,34 @@ export class DemoDataService {
     Object.assign(movement, { familyId, expenseId, notes, assignmentStatus: familyId || expenseId ? "ASIGNADO" : "PENDIENTE" });
     return clone(movement);
   }
+
+  async listReconciliationRules() {
+    await delay(120);
+    return clone(this.data.reconciliationRules ?? []);
+  }
+
+  async createReconciliationRule(rule) {
+    await delay(180);
+    const created = { ...clone(rule), id: `rule_demo_${crypto.randomUUID()}`, active: true, priority: rule.priority ?? 100 };
+    this.data.reconciliationRules = [created, ...(this.data.reconciliationRules ?? [])];
+    return clone(created);
+  }
+
+  async setReconciliationRuleActive(id, active) {
+    await delay(140);
+    const rule = (this.data.reconciliationRules ?? []).find((item) => item.id === id);
+    if (!rule) throw new Error("La regla no existe.");
+    rule.active = Boolean(active);
+    return clone(rule);
+  }
+
+  async deleteReconciliationRule(id) {
+    await delay(140);
+    const before = this.data.reconciliationRules?.length ?? 0;
+    this.data.reconciliationRules = (this.data.reconciliationRules ?? []).filter((item) => item.id !== id);
+    if (this.data.reconciliationRules.length === before) throw new Error("La regla no existe.");
+    return true;
+  }
 }
 
 export class SupabaseDataService {
@@ -303,6 +331,25 @@ export class SupabaseDataService {
   }
 
   listReconciliationRules() { return this.rpc("list_reconciliation_rules"); }
+
+  createReconciliationRule(rule) {
+    return this.rpc("create_reconciliation_rule", {
+      p_pattern: rule.pattern,
+      p_match_type: rule.matchType ?? "CONTAINS",
+      p_family_id: rule.familyId ?? null,
+      p_category_id: rule.categoryId ?? null,
+      p_priority: rule.priority ?? 100,
+      p_notes: rule.notes ?? null
+    });
+  }
+
+  setReconciliationRuleActive(id, active) {
+    return this.rpc("set_reconciliation_rule_active", { p_id: id, p_active: active });
+  }
+
+  deleteReconciliationRule(id) {
+    return this.rpc("delete_reconciliation_rule", { p_id: id });
+  }
 }
 
 export function createDataService(config = globalThis.APP_CONFIG) {
