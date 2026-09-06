@@ -181,6 +181,23 @@ test("el adaptador Supabase usa RPC protegidas para corregir gastos y derramas",
   assert.equal(JSON.parse(calls[1].options.body).p_assessment_id, "derrama-1");
 });
 
+test("la conciliación bancaria permite corregir familia, gasto o categoría", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
+    getAccessToken: async () => "jwt-demo",
+    fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => ({ id: "mov-1" }) }; }
+  });
+  await service.assignBankMovement({ id: "mov-1", categoryName: "Impuestos / tasas", notes: "Revisado" });
+  assert.equal(calls[0].url, "https://demo.supabase.co/rest/v1/rpc/assign_bank_movement");
+  assert.deepEqual(JSON.parse(calls[0].options.body), {
+    p_id: "mov-1",
+    p_family_id: null,
+    p_expense_id: null,
+    p_category_name: "Impuestos / tasas",
+    p_notes: "Revisado"
+  });
+});
+
 test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {
   const calls = [];
   const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {

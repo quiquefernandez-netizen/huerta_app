@@ -56,6 +56,16 @@ test("la interfaz deja al perfil normal registrar y reserva la administración",
   assert.match(source, /profileButton\.querySelector\("small"\)\.textContent = isAdministrator\(\) \? "Administrador" : "Perfil normal"/);
 });
 
+test("los movimientos bancarios guardados se pueden revisar y volver a editar", async () => {
+  const app = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const migration = await readFile(new URL("../supabase/migrations/022_bank_category_assignments.sql", import.meta.url), "utf8");
+  assert.match(app, /data-edit-bank-movement/);
+  assert.match(app, /id="bank-movement-form"/);
+  assert.match(app, /categoryName: assignment\.startsWith\("CATEGORY:"\)/);
+  assert.match(migration, /add column if not exists category_id/);
+  assert.match(migration, /create function public\.assign_bank_movement/);
+});
+
 test("los importes de resumen se adaptan a cifras grandes sin salir de la tarjeta", async () => {
   const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
   const themes = await readFile(new URL("../frontend/css/themes.css", import.meta.url), "utf8");

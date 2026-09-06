@@ -141,11 +141,11 @@ export class DemoDataService {
     return { batchId: `batch_demo_${crypto.randomUUID()}`, source, rows: (rows ?? []).length, imported: imported.length, duplicates };
   }
 
-  async assignBankMovement({ id, familyId = null, expenseId = null, notes = "" }) {
+  async assignBankMovement({ id, familyId = null, expenseId = null, categoryName = null, notes = "" }) {
     await delay(180);
     const movement = (this.data.bankMovements ?? []).find((item) => item.id === id);
     if (!movement) throw new Error("El movimiento bancario no existe.");
-    Object.assign(movement, { familyId, expenseId, notes, assignmentStatus: familyId || expenseId ? "ASIGNADO" : "PENDIENTE" });
+    Object.assign(movement, { familyId, expenseId, categoryName, notes, assignmentStatus: familyId || expenseId || categoryName ? "ASIGNADO" : "PENDIENTE" });
     return clone(movement);
   }
 
@@ -326,8 +326,8 @@ export class SupabaseDataService {
     return this.rpc("import_bank_movements", { p_source: source, p_rows: rows });
   }
 
-  assignBankMovement({ id, familyId = null, expenseId = null, notes = "" }) {
-    return this.rpc("assign_bank_movement", { p_id: id, p_family_id: familyId, p_expense_id: expenseId, p_notes: notes });
+  assignBankMovement({ id, familyId = null, expenseId = null, categoryName = null, notes = "" }) {
+    return this.rpc("assign_bank_movement", { p_id: id, p_family_id: familyId, p_expense_id: expenseId, p_category_name: categoryName, p_notes: notes });
   }
 
   listReconciliationRules() { return this.rpc("list_reconciliation_rules"); }

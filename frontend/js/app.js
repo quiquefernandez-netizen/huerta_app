@@ -337,12 +337,65 @@ async function openBankRulesDialog() {
   document.querySelectorAll("[data-rule-delete]").forEach((button) => button.addEventListener("click", async () => { if (!window.confirm("¿Eliminar esta regla de conciliación?")) return; try { await service.deleteReconciliationRule(button.dataset.ruleDelete); bankRules = bankRules.filter((rule) => rule.id !== button.dataset.ruleDelete); await openBankRulesDialog(); showToast("Regla eliminada."); } catch (error) { showToast(error.message); } }));
 }
 
+function openBankMovementDialog(movementId) {
+  if (!isAdministrator()) return;
+  const movement = (data.bankMovements ?? []).find((item) => item.id === movementId);
+  if (!movement) {
+    showToast("No encontramos ese movimiento.");
+    return;
+  }
+  const kind = movement.amountCents >= 0 ? "Ingreso" : "Salida";
+  openDialog(`${dialogHeader("Conciliación bancaria", "Revisar movimiento")}
+    <form class="dialog-form" id="bank-movement-form">
+      <input type="hidden" name="id" value="${escapeHtml(movement.id)}">
+      <div class="bank-movement-detail"><span>${kind} · ${formatDate(movement.date)}</span><strong>${escapeHtml(movement.concept)}</strong><b>${movement.amountCents >= 0 ? "+" : ""}${formatMoney(movement.amountCents)}</b></div>
+      <label>Asignar a
+        <select name="assignment">
+          <option value="">Sin asignar</option>
+          ${bankAssignmentOptions(movement, true)}
+        </select>
+      </label>
+      <small>${movement.amountCents >= 0 ? "Los ingresos se asignan a una familia." : "Las salidas se asignan a una categoría o a un gasto ya registrado."}</small>
+      <label>Nota opcional<textarea name="notes" maxlength="300" placeholder="Añade una aclaración si hace falta">${escapeHtml(movement.notes ?? "")}</textarea></label>
+      <p class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar asignación</button></div>
+    </form>`);
+}
+
+function bankAssignmentValue(item) {
+  if (item.familyId) return `FAMILY:${item.familyId}`;
+  if (item.expenseId) return `EXPENSE:${item.expenseId}`;
+  if (item.categoryName) return `CATEGORY:${item.categoryName}`;
+  return item.assignment ?? "";
+}
+
+function bankAssignmentOptions(item, includeExpenses = false) {
+  const current = bankAssignmentValue(item);
+  const option = (value, label) => `<option value="${escapeHtml(value)}"${current === value ? " selected" : ""}>${escapeHtml(label)}</option>`;
+  if (item.amountCents >= 0) {
+    return data.families.filter((family) => family.active).map((family) => option(`FAMILY:${family.id}`, family.name)).join("");
+  }
+  const categories = data.expenseCategories.map((category) => option(`CATEGORY:${category.name}`, category.name)).join("");
+  const expenses = includeExpenses ? data.expenses.map((expense) => option(`EXPENSE:${expense.id}`, `${expense.concept} · ${formatMoney(expense.amountCents)}`)).join("") : "";
+  return `${categories}${expenses ? `<optgroup label="Gastos ya registrados">${expenses}</optgroup>` : ""}`;
+}
+
+function bankAssignmentLabel(item) {
+  const family = data.families.find((entry) => entry.id === item.familyId);
+  const expense = data.expenses.find((entry) => entry.id === item.expenseId);
+  if (family) return `Familia: ${family.name}`;
+  if (expense) return `Gasto: ${expense.concept}`;
+  if (item.categoryName) return `Categoría: ${item.categoryName}`;
+  return "Sin asignar";
+}
+
 function renderBank() {
-  const summary = bankPreview ? `<section class="inline-summary"><div><span>Movimientos válidos</span><strong>${bankPreview.records.length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Filas a revisar</span><strong>${bankPreview.errors.length}</strong></div><div><span>Listos para importar</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div></section><section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización local</p><h3>Revisa antes de importar</h3></div><button class="primary-button" type="button" data-confirm-bank-import>Confirmar importación</button></div><div class="bank-preview-list">${bankPreview.records.map((item) => `<article class="bank-preview-row${item.duplicate ? " is-duplicate" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)}${item.reference ? ` · ${escapeHtml(item.reference)}` : ""}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.duplicate ? "Duplicado" : "Nuevo"}</span></article>`).join("")}${bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Revisar</span></article>`).join("")}</div></section>` : `<section class="panel bank-empty"><p class="section-kicker">Importación manual</p><h2>Revisa el extracto antes de guardarlo</h2><p>Selecciona un .xls, .xlsx o CSV. Buscaremos la fila de encabezados del banco, normalizaremos los importes y separaremos duplicados antes de importarlo.</p><div class="page-actions"><label class="primary-button file-button">Añadir movimientos<input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label></div></section>`;
+  const summary = bankPreview ? `<section class="inline-summary"><div><span>Movimientos válidos</span><strong>${bankPreview.records.length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Filas a revisar</span><strong>${bankPreview.errors.length}</strong></div><div><span>Listos para importar</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div></section><section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización local</p><h3>Revisa antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.map((item) => `<article class="bank-preview-row${item.duplicate ? " is-duplicate" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)}${item.reference ? ` · ${escapeHtml(item.reference)}` : ""}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.duplicate ? "Duplicado" : "Nuevo"}</span></article>`).join("")}${bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Error</span></article>`).join("")}</div></section>` : `<section class="panel bank-empty"><div class="page-actions"><label class="primary-button file-button">${icon("plus")} ${icon("excel")}<span class="sr-only">Añadir movimientos desde Excel</span><input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label></div></section>`;
   const movements = (data.bankMovements ?? []).slice(0, 30);
-  const history = `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Cuenta común</p><h3>Últimos movimientos</h3></div><span class="help-label">${movements.filter((item) => item.assignmentStatus === "PENDIENTE").length} pendientes de asignar</span></div><div class="bank-preview-list">${movements.length ? movements.map((item) => { const family = data.families.find((entry) => entry.id === item.familyId); const expense = data.expenses.find((entry) => entry.id === item.expenseId); const assigned = family ? `Familia: ${family.name}` : expense ? `Gasto: ${expense.concept}` : "Sin asignar"; return `<article class="bank-preview-row${item.assignmentStatus === "PENDIENTE" ? " is-error" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${escapeHtml(assigned)}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.assignmentStatus === "PENDIENTE" ? "Revisar" : "Asignado"}</span></article>`; }).join("") : `<div class="empty-list"><strong>Aún no hay movimientos importados.</strong><span>Selecciona un extracto para ver una previsualización.</span></div>`}</div></section>`;
-  const conciliation = bankPreview ? `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Conciliación</p><h3>Asigna cada movimiento antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.filter((item) => !item.duplicate).map((item, index) => { const options = item.amountCents >= 0 ? data.families.filter((family) => family.active).map((family) => `<option value="FAMILY:${escapeHtml(family.id)}">${escapeHtml(family.name)}</option>`).join("") : data.expenseCategories.map((category) => `<option value="CATEGORY:${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join(""); return `<article class="bank-preview-row"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${item.amountCents >= 0 ? "Ingreso" : "Gasto"}</small></div><select data-bank-assignment="${index}"><option value="">Sin asignar</option>${options}<option value="OTHER">Otros</option></select><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong></article>`; }).join("")}</div><div class="page-actions"><button class="primary-button" type="button" data-confirm-bank-import>Confirmar importación</button></div></section>` : "";
-  return `${conciliation}${summary}${history}<aside class="info-note">${icon("bank")}<p><strong>Banco trabaja siempre con previsualización.</strong> La importación definitiva se habilita tras la revisión de administración.</p></aside>`;
+  const pendingCount = movements.filter((item) => item.assignmentStatus === "PENDIENTE").length;
+  const history = `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Cuenta común</p><h3>Últimos movimientos</h3></div><span class="help-label">${pendingCount} pendientes de asignar</span></div><div class="bank-preview-list">${movements.length ? movements.map((item) => `<article class="bank-preview-row${item.assignmentStatus === "PENDIENTE" ? " is-error" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${escapeHtml(bankAssignmentLabel(item))}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong>${isAdministrator() ? `<button class="bank-review-button" type="button" data-edit-bank-movement="${escapeHtml(item.id)}">${item.assignmentStatus === "PENDIENTE" ? "Revisar" : "Editar"}</button>` : `<span>${item.assignmentStatus === "PENDIENTE" ? "Pendiente" : "Asignado"}</span>`}</article>`).join("") : `<div class="empty-list"><strong>Aún no hay movimientos importados.</strong><span>Selecciona un extracto para ver una previsualización.</span></div>`}</div></section>`;
+  const conciliation = bankPreview ? `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Conciliación</p><h3>Asigna cada movimiento antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.filter((item) => !item.duplicate).map((item, index) => `<article class="bank-preview-row"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${item.amountCents >= 0 ? "Ingreso" : "Gasto"}</small></div><select data-bank-assignment="${index}" aria-label="Asignación de ${escapeHtml(item.concept)}"><option value=""${bankAssignmentValue(item) ? "" : " selected"}>Sin asignar</option>${bankAssignmentOptions(item)}</select><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong></article>`).join("")}</div><div class="page-actions"><button class="primary-button" type="button" data-confirm-bank-import>Confirmar conciliación e importar</button></div></section>` : "";
+  return `${conciliation}${summary}${history}<aside class="info-note">${icon("bank")}<p><strong>Puedes corregir una asignación después de importar.</strong> Entra como administrador y pulsa Revisar o Editar en el movimiento.</p></aside>`;
 }
 
 async function createBankPreview(rows, source) {
@@ -765,6 +818,36 @@ function bindDialogInteractions() {
     }
   });
 
+  dialog.querySelector("#bank-movement-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const values = new FormData(formElement);
+    const assignment = String(values.get("assignment") ?? "");
+    const submitButton = formElement.querySelector("button[type='submit']");
+    const error = formElement.querySelector(".form-error");
+    submitButton.disabled = true;
+    submitButton.textContent = "Guardando…";
+    try {
+      await service.assignBankMovement({
+        id: values.get("id"),
+        familyId: assignment.startsWith("FAMILY:") ? assignment.slice(7) : null,
+        expenseId: assignment.startsWith("EXPENSE:") ? assignment.slice(8) : null,
+        categoryName: assignment.startsWith("CATEGORY:") ? assignment.slice(9) : null,
+        notes: String(values.get("notes") ?? "").trim()
+      });
+      data = await service.getSnapshot();
+      dialog.close();
+      renderRoute();
+      showToast(assignment ? "Asignación guardada." : "El movimiento vuelve a estar pendiente.");
+    } catch (saveError) {
+      console.error(saveError);
+      error.textContent = "No hemos podido guardar la asignación. Comprueba la conexión y vuelve a intentarlo.";
+      error.hidden = false;
+      submitButton.disabled = false;
+      submitButton.textContent = "Guardar asignación";
+    }
+  });
+
   dialog.querySelector("#family-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const formElement = event.currentTarget;
@@ -1100,6 +1183,7 @@ function bindInteractions() {
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
   document.querySelectorAll("[data-edit-expense]").forEach((button) => button.addEventListener("click", () => openExpenseDialog(button.dataset.editExpense)));
   document.querySelectorAll("[data-edit-assessment]").forEach((button) => button.addEventListener("click", () => openAssessmentDialog(button.dataset.editAssessment)));
+  document.querySelectorAll("[data-edit-bank-movement]").forEach((button) => button.addEventListener("click", () => openBankMovementDialog(button.dataset.editBankMovement)));
   document.querySelector("[data-open-water]")?.addEventListener("click", () => openWaterDialog());
   document.querySelector("[data-open-water-settlement]")?.addEventListener("click", openWaterSettlementDialog);
   document.querySelectorAll("[data-water-history]").forEach((button) => button.addEventListener("click", () => openWaterHistoryDialog(button.dataset.waterHistory)));
@@ -1119,9 +1203,13 @@ function bindInteractions() {
     try {
       const result = await service.importBankMovements({ source: bankPreview.records[0]?.source ?? "extracto", rows: bankPreview.records.filter((item) => !item.duplicate) });
       data = await service.getSnapshot();
-      for (const record of bankPreview.records.filter((item) => !item.duplicate && item.assignment?.startsWith("FAMILY:"))) {
+      for (const record of bankPreview.records.filter((item) => !item.duplicate && item.assignment)) {
         const movement = data.bankMovements.find((item) => item.fingerprint === record.fingerprint);
-        if (movement) await service.assignBankMovement({ id: movement.id, familyId: record.assignment.slice(7) });
+        if (movement) await service.assignBankMovement({
+          id: movement.id,
+          familyId: record.assignment.startsWith("FAMILY:") ? record.assignment.slice(7) : null,
+          categoryName: record.assignment.startsWith("CATEGORY:") ? record.assignment.slice(9) : null
+        });
       }
       data = await service.getSnapshot(); bankPreview = null; renderRoute();
       showToast(`${result.imported} movimientos importados; ${result.duplicates} duplicados omitidos.`);
