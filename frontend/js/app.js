@@ -134,7 +134,8 @@ function renderDashboard() {
   const waterTotalM3 = waterSettlementState().preview?.totalUsageM3 ?? 0;
   const yearlyDifferenceCents = data.community.yearlyIncomeCents - data.community.yearlyExpensesCents;
   const pendingFamilies = activeFamilies.length - upToDate;
-  const pendingBankMovements = (data.bankMovements ?? []).filter((movement) => movement.assignmentStatus === "PENDIENTE").length;
+  const latestBankMovement = [...(data.bankMovements ?? [])].sort((a, b) => b.date.localeCompare(a.date))[0];
+  const bankBalanceCents = latestBankMovement?.balanceCents ?? null;
 
   return `
     <section class="summary-grid" aria-label="Resumen de la comunidad">
@@ -142,7 +143,7 @@ function renderDashboard() {
       <article class="summary-card"><span class="summary-card__icon summary-card__icon--sun">${icon("receipt")}</span><div><p>Gastos del año</p><strong>${formatMoney(data.community.yearlyExpensesCents)}</strong><small>${formatMoney(data.community.yearlyIncomeCents)} ingresados</small></div></article>
       <article class="summary-card"><span class="summary-card__icon summary-card__icon--blue">${icon("people")}</span><div><p>Cuota mensual</p><strong>${formatMoney(plan.monthlyAmountCents)}</strong><small>${upToDate} de ${activeFamilyCount} familias al día</small></div></article>
       <article class="summary-card"><span class="summary-card__icon summary-card__icon--clay">${icon("calendar")}</span><div><p>Próxima reunión</p><strong>${escapeHtml(data.community.nextMeeting.day)} ${escapeHtml(data.community.nextMeeting.month)}</strong><small>${escapeHtml(data.community.nextMeeting.time)} · ${escapeHtml(data.community.nextMeeting.place)}</small></div></article>
-      <a class="summary-card" href="#banco"><span class="summary-card__icon summary-card__icon--blue">${icon("bank")}</span><div><p>Banco</p><strong>${pendingBankMovements}</strong><small>${pendingBankMovements === 1 ? "movimiento por conciliar" : "movimientos por conciliar"}</small></div></a>
+      <a class="summary-card" href="#banco"><span class="summary-card__icon summary-card__icon--blue">${icon("bank")}</span><div><p>Banco</p><strong>${bankBalanceCents === null ? "—" : formatMoney(bankBalanceCents)}</strong><small>${latestBankMovement ? `Saldo a ${formatDate(latestBankMovement.date)}` : "Sin extractos importados"}</small></div></a>
     </section>
     <section class="dashboard-grid">
       <article class="panel chart-panel">
