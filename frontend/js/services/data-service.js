@@ -301,6 +301,8 @@ export class SupabaseDataService {
   assignBankMovement({ id, familyId = null, expenseId = null, notes = "" }) {
     return this.rpc("assign_bank_movement", { p_id: id, p_family_id: familyId, p_expense_id: expenseId, p_notes: notes });
   }
+
+  listReconciliationRules() { return this.rpc("list_reconciliation_rules"); }
 }
 
 export function createDataService(config = globalThis.APP_CONFIG) {
