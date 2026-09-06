@@ -27,8 +27,9 @@ El proyecto incluye la base funcional de la **Fase 1** y el flujo bancario princ
 - Banco con importación manual XLS/XLSX/CSV, previsualización, duplicados, conciliación y movimientos pendientes.
 - Reglas de conciliación editables desde Administración, aplicables automáticamente en la previsualización y a operaciones ya importadas.
 - Histórico de importaciones con reversión segura y aportaciones/gastos vinculados a su movimiento bancario.
+- Propuestas accesibles para toda la comunidad, con estados claros y varios presupuestos comparables por propuesta.
 
-El frontend local está conectado a Supabase mediante su clave publicable. Las contraseñas se validan en servidor y la sesión, no la contraseña, se conserva en el dispositivo cuando se solicita. Propuestas, votaciones, reuniones, actas y documentos siguen fuera del alcance actual.
+El frontend local está conectado a Supabase mediante su clave publicable. Las contraseñas se validan en servidor y la sesión, no la contraseña, se conserva en el dispositivo cuando se solicita. Votaciones, reuniones, actas y documentos siguen fuera del alcance actual.
 
 La apariencia se cambia desde el botón de perfil. La preferencia es local al navegador y no contiene datos personales. Los temas Plano y Aero están disponibles; Aero reinterpreta el cristal nocturno de Windows Vista sin reutilizar recursos del sistema operativo.
 

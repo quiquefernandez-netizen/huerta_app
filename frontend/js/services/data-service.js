@@ -56,6 +56,48 @@ export class DemoDataService {
     return clone(created);
   }
 
+  async createProposal(proposal) {
+    await delay(220);
+    const created = { ...clone(proposal), id: `prop_demo_${crypto.randomUUID()}`, status: "IDEA", budgets: [] };
+    this.data.proposals = [created, ...(this.data.proposals ?? [])];
+    return clone(created);
+  }
+
+  async updateProposal(proposal) {
+    await delay(220);
+    const index = (this.data.proposals ?? []).findIndex((item) => item.id === proposal.id);
+    if (index < 0) throw new Error("La propuesta no existe.");
+    this.data.proposals[index] = { ...this.data.proposals[index], ...clone(proposal) };
+    return clone(this.data.proposals[index]);
+  }
+
+  async deleteProposal(id) {
+    await delay(180);
+    const before = (this.data.proposals ?? []).length;
+    this.data.proposals = (this.data.proposals ?? []).filter((item) => item.id !== id);
+    if (this.data.proposals.length === before) throw new Error("La propuesta no existe.");
+    return true;
+  }
+
+  async createProposalBudget(budget) {
+    await delay(200);
+    const proposal = (this.data.proposals ?? []).find((item) => item.id === budget.proposalId);
+    if (!proposal) throw new Error("La propuesta no existe.");
+    const created = { ...clone(budget), id: `pre_demo_${crypto.randomUUID()}` };
+    proposal.budgets = [...(proposal.budgets ?? []), created].sort((a, b) => a.amountCents - b.amountCents);
+    return clone(created);
+  }
+
+  async deleteProposalBudget(id) {
+    await delay(160);
+    for (const proposal of this.data.proposals ?? []) {
+      const before = (proposal.budgets ?? []).length;
+      proposal.budgets = (proposal.budgets ?? []).filter((item) => item.id !== id);
+      if (proposal.budgets.length < before) return true;
+    }
+    throw new Error("El presupuesto no existe.");
+  }
+
   async updateAssessment(assessment) {
     await delay(280);
     const index = this.data.assessments.findIndex((item) => item.id === assessment.id);
@@ -258,8 +300,9 @@ export class SupabaseDataService {
     return response.json();
   }
 
-  getSnapshot() {
-    return this.rpc("get_community_snapshot");
+  async getSnapshot() {
+    const [snapshot, proposals] = await Promise.all([this.rpc("get_community_snapshot"), this.rpc("list_proposals")]);
+    return { ...snapshot, proposals };
   }
 
   createFamily(family) {
@@ -416,6 +459,22 @@ export class SupabaseDataService {
   deleteReconciliationRule(id) {
     return this.rpc("delete_reconciliation_rule", { p_id: id });
   }
+
+  createProposal(proposal) {
+    return this.rpc("create_proposal", { p_title: proposal.title, p_description: proposal.description, p_proposed_on: proposal.date, p_estimated_budget_cents: proposal.estimatedBudgetCents, p_notes: proposal.notes ?? "" });
+  }
+
+  updateProposal(proposal) {
+    return this.rpc("update_proposal", { p_id: proposal.id, p_title: proposal.title, p_description: proposal.description, p_proposed_on: proposal.date, p_estimated_budget_cents: proposal.estimatedBudgetCents, p_status: proposal.status, p_notes: proposal.notes ?? "" });
+  }
+
+  deleteProposal(id) { return this.rpc("delete_proposal", { p_id: id }); }
+
+  createProposalBudget(budget) {
+    return this.rpc("create_proposal_budget", { p_proposal_id: budget.proposalId, p_provider: budget.provider, p_amount_cents: budget.amountCents, p_description: budget.description ?? "", p_quoted_on: budget.date, p_notes: budget.notes ?? "" });
+  }
+
+  deleteProposalBudget(id) { return this.rpc("delete_proposal_budget", { p_id: id }); }
 }
 
 export function createDataService(config = globalThis.APP_CONFIG) {

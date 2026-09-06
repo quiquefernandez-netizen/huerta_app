@@ -261,11 +261,11 @@ Tabla añadida para soportar reversión e idempotencia con claridad: `id`, `nomb
 
 ### PROPUESTAS
 
-`id`, `titulo`, `descripcion`, `creador_usuario_id`, `fecha`, `presupuesto_estimado_cents`, `estado`, `reunion_id`, `notas`, `creada_en`, `actualizada_en`.
+Implementada en Supabase como `propuestas`: `id`, `title`, `description`, `created_by`, `proposed_on`, `estimated_budget_cents`, `status`, `notes`, `created_at`, `updated_at`. La relación opcional con una reunión se añadirá cuando exista ese módulo.
 
 ### PRESUPUESTOS
 
-`id`, `propuesta_id`, `proveedor`, `importe_cents`, `descripcion`, `documento_id`, `fecha`, `observaciones`.
+Implementada como `presupuestos_propuesta`: `id`, `proposal_id`, `provider`, `amount_cents`, `description`, `quoted_on`, `notes`, `created_by`, `created_at`, `updated_at`. Una propuesta admite cualquier número de presupuestos. La referencia documental se añadirá junto al almacenamiento de documentos.
 
 ### VOTACIONES
 

@@ -12,6 +12,7 @@ const auditMigrationUrl = new URL("../supabase/migrations/004_phase1_audit.sql",
 const quotaMigrationUrl = new URL("../supabase/migrations/005_quota_and_water_settlement_batches.sql", import.meta.url);
 const accountsMigrationUrl = new URL("../supabase/migrations/006_family_accounts_expenses_and_assessments.sql", import.meta.url);
 const quotaReferenceMigrationUrl = new URL("../supabase/migrations/026_quota_as_contribution_reference.sql", import.meta.url);
+const proposalsMigrationUrl = new URL("../supabase/migrations/027_proposals_and_budgets.sql", import.meta.url);
 const edgeFunctionUrl = new URL("../supabase/functions/unlock-access/index.ts", import.meta.url);
 
 test("la API anónima permanece cerrada", async () => {
@@ -149,4 +150,14 @@ test("la cuota es una referencia y no un cargo en la cuenta familiar", async () 
   assert.doesNotMatch(sql, /from public\.cuotas/i);
   assert.match(sql, /'AGUA'[\s\S]*-'?[^\n]*amount_cents/i);
   assert.match(sql, /'DERRAMA'[\s\S]*-'?[^\n]*amount_cents/i);
+});
+
+test("propuestas y presupuestos se protegen mediante RPC y reservan el borrado al administrador", async () => {
+  const sql = await readFile(proposalsMigrationUrl, "utf8");
+  assert.match(sql, /alter table public\.propuestas enable row level security/i);
+  assert.match(sql, /revoke all on table public\.propuestas, public\.presupuestos_propuesta from anon, authenticated/i);
+  assert.match(sql.match(/function public\.create_proposal[\s\S]*?\$\$;/i)?.[0] ?? "", /current_user_is_active/);
+  assert.match(sql.match(/function public\.delete_proposal\(p_id uuid\)[\s\S]*?\$\$;/i)?.[0] ?? "", /current_user_is_admin/);
+  assert.match(sql, /on delete cascade/);
+  assert.match(sql, /audit_propuestas_changes/);
 });

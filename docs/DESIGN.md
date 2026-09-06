@@ -88,6 +88,8 @@ Familias da protagonismo al total aportado y lo separa en «aplicado a cuota» y
 
 Agua presenta el consumo acumulado desde la última liquidación. «Liquidar agua» abre primero un resumen por familia con lectura anterior, lectura actual, consumo e importe. La confirmación crea cargos familiares que se compensan con cualquier saldo a favor.
 
+Propuestas usa tarjetas breves con estado, fecha y referencia económica. Al abrir una propuesta se ve la explicación completa y una comparación sencilla de todos sus presupuestos, ordenados por importe, sin convertir la pantalla en una tabla empresarial.
+
 Gastos pregunta de forma explícita si pagó la cuenta común o una o varias familias. Si pagaron familias, permite detallar cuánto adelantó cada una y valida que la suma coincida. Derramas es una acción separada: se eligen participantes y se muestra el reparto antes de confirmar.
 
 ## Pendientes de diseño

@@ -46,6 +46,18 @@ test("las páginas de Fase 1 están registradas como disponibles", async () => {
   }
 });
 
+test("Propuestas está disponible con varios presupuestos y formularios responsive", async () => {
+  const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
+  assert.match(source, /id: "propuestas"[^\n]+enabled: true/);
+  assert.match(source, /function renderProposals/);
+  assert.match(source, /id="proposal-form"/);
+  assert.match(source, /id="proposal-budget-form"/);
+  assert.match(source, /proposal\.budgets/);
+  assert.match(styles, /\.proposal-grid/);
+  assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?\.proposal-grid \{ grid-template-columns: 1fr/);
+});
+
 test("la interfaz deja al perfil normal registrar y reserva la administración", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
   assert.match(source, /route\.id !== "administracion" \|\| isAdministrator\(\)/);

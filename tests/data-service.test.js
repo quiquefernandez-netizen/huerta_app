@@ -231,6 +231,31 @@ test("el adaptador Supabase cubre edición, aplicación de reglas y reversión d
   assert.deepEqual(JSON.parse(calls[2].options.body), { p_batch_id: "batch-1" });
 });
 
+test("la demo admite varias ofertas dentro de una propuesta", async () => {
+  const service = new DemoDataService();
+  const proposal = await service.createProposal({ title: "Idea de prueba", description: "Descripción de prueba", date: "2026-09-06", estimatedBudgetCents: null, notes: "" });
+  await service.createProposalBudget({ proposalId: proposal.id, provider: "Proveedor A", amountCents: 12000, description: "Opción A", date: "2026-09-06", notes: "" });
+  await service.createProposalBudget({ proposalId: proposal.id, provider: "Proveedor B", amountCents: 10000, description: "Opción B", date: "2026-09-06", notes: "" });
+  const saved = (await service.getSnapshot()).proposals.find((item) => item.id === proposal.id);
+  assert.equal(saved.budgets.length, 2);
+  assert.deepEqual(saved.budgets.map((item) => item.amountCents), [10000, 12000]);
+});
+
+test("Supabase carga propuestas y usa RPC protegidas para propuesta y presupuesto", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
+    getAccessToken: async () => "jwt-demo",
+    fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => url.endsWith("list_proposals") ? [] : { id: "demo" } }; }
+  });
+  const snapshot = await service.getSnapshot();
+  await service.createProposal({ title: "Idea", description: "Descripción", date: "2026-09-06", estimatedBudgetCents: 10000, notes: "" });
+  await service.createProposalBudget({ proposalId: "prop-1", provider: "Proveedor", amountCents: 9500, description: "Oferta", date: "2026-09-06", notes: "" });
+  assert.deepEqual(snapshot.proposals, []);
+  assert.ok(calls.some((call) => call.url.endsWith("/rpc/list_proposals")));
+  assert.ok(calls.some((call) => call.url.endsWith("/rpc/create_proposal")));
+  assert.ok(calls.some((call) => call.url.endsWith("/rpc/create_proposal_budget")));
+});
+
 test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {
   const calls = [];
   const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {

@@ -10,7 +10,7 @@ const routes = [
   { id: "banco", label: "Banco", icon: "bank", enabled: true },
   { id: "gastos", label: "Gastos", icon: "receipt", enabled: true },
   { id: "agua", label: "Agua", icon: "water", enabled: true },
-  { id: "propuestas", label: "Propuestas", icon: "bulb", enabled: false },
+  { id: "propuestas", label: "Propuestas", icon: "bulb", enabled: true },
   { id: "reuniones", label: "Reuniones", icon: "calendar", enabled: false },
   { id: "documentos", label: "Documentos", icon: "folder", enabled: false },
   { id: "administracion", label: "Administración", icon: "settings", enabled: true }
@@ -413,6 +413,53 @@ function renderBank() {
   return `${conciliation}${history}${importHistory}<aside class="info-note">${icon("bank")}<p><strong>La conciliación actualiza las cuentas.</strong> Una familia recibe una aportación y una categoría crea el gasto correspondiente; después siempre puedes corregir la asignación.</p></aside>`;
 }
 
+const proposalStatuses = {
+  IDEA: "Idea",
+  EN_ESTUDIO: "En estudio",
+  PENDIENTE_VOTACION: "Pendiente de votación",
+  APROBADA: "Aprobada",
+  RECHAZADA: "Rechazada",
+  EN_EJECUCION: "En ejecución",
+  FINALIZADA: "Finalizada"
+};
+
+function proposalStatusLabel(status) {
+  return proposalStatuses[status] ?? "Idea";
+}
+
+function renderProposals() {
+  const proposals = data.proposals ?? [];
+  const budgetCount = sumCents(proposals, (proposal) => (proposal.budgets ?? []).length);
+  const inProgress = proposals.filter((proposal) => ["EN_ESTUDIO", "PENDIENTE_VOTACION", "EN_EJECUCION"].includes(proposal.status)).length;
+  const approved = proposals.filter((proposal) => ["APROBADA", "FINALIZADA"].includes(proposal.status)).length;
+  return `<section class="inline-summary" aria-label="Resumen de propuestas"><div><span>Total</span><strong>${proposals.length}</strong></div><div><span>En marcha</span><strong>${inProgress}</strong></div><div><span>Aprobadas</span><strong>${approved}</strong></div><div><span>Presupuestos</span><strong>${budgetCount}</strong></div></section>
+    <section class="proposal-grid" aria-label="Listado de propuestas">${proposals.length ? proposals.map((proposal) => {
+      const budgets = proposal.budgets ?? [];
+      const lowestBudget = budgets.length ? Math.min(...budgets.map((budget) => budget.amountCents)) : null;
+      return `<button class="proposal-card" type="button" data-proposal-id="${escapeHtml(proposal.id)}"><span class="proposal-card__top"><span class="proposal-status proposal-status--${proposal.status.toLowerCase()}">${escapeHtml(proposalStatusLabel(proposal.status))}</span><small>${formatDate(proposal.date)}</small></span><strong>${escapeHtml(proposal.title)}</strong><span class="proposal-card__description">${escapeHtml(proposal.description)}</span><span class="proposal-card__bottom"><span><small>${budgets.length ? `${budgets.length} ${budgets.length === 1 ? "presupuesto" : "presupuestos"}` : "Sin presupuestos"}</small><b>${lowestBudget === null ? (proposal.estimatedBudgetCents === null ? "Por valorar" : `Estimado ${formatMoney(proposal.estimatedBudgetCents)}`) : `Desde ${formatMoney(lowestBudget)}`}</b></span>${icon("arrow")}</span></button>`;
+    }).join("") : `<div class="empty-list"><strong>Aún no hay propuestas.</strong><span>Añade una idea para que la comunidad pueda estudiarla.</span></div>`}</section>`;
+}
+
+function openProposalForm(proposal = null) {
+  const canEditStatus = isAdministrator() && proposal;
+  const statusOptions = Object.entries(proposalStatuses).map(([value, label]) => `<option value="${value}"${proposal?.status === value ? " selected" : ""}>${label}</option>`).join("");
+  openDialog(`${dialogHeader(proposal ? "Editar propuesta" : "Nueva propuesta", proposal ? escapeHtml(proposal.title) : "Compartir una idea")}
+    <form class="dialog-form" id="proposal-form"><input type="hidden" name="id" value="${escapeHtml(proposal?.id ?? "")}"><label>Título<input name="title" required minlength="3" maxlength="120" value="${escapeHtml(proposal?.title ?? "")}" placeholder="¿Qué propones?"></label><label>Descripción<textarea name="description" required minlength="3" maxlength="5000" placeholder="Explícalo de forma sencilla">${escapeHtml(proposal?.description ?? "")}</textarea></label><div class="form-row"><label>Fecha<input name="date" required type="date" value="${proposal?.date ?? todayIso()}"></label><label>Presupuesto estimado (€)<input name="estimatedBudget" inputmode="decimal" value="${proposal?.estimatedBudgetCents == null ? "" : centsInputValue(proposal.estimatedBudgetCents)}" placeholder="Opcional"></label></div>${canEditStatus ? `<label>Estado<select name="status">${statusOptions}</select></label>` : ""}<label>Notas<textarea name="notes" maxlength="1000">${escapeHtml(proposal?.notes ?? "")}</textarea></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">${proposal ? "Guardar cambios" : "Crear propuesta"}</button></div></form>`);
+}
+
+function openProposalDetail(proposalId) {
+  const proposal = (data.proposals ?? []).find((item) => item.id === proposalId);
+  if (!proposal) return showToast("No encontramos esa propuesta.");
+  const budgets = proposal.budgets ?? [];
+  openDialog(`${dialogHeader("Propuesta", escapeHtml(proposal.title))}<div class="proposal-detail"><div class="proposal-detail__meta"><span class="proposal-status proposal-status--${proposal.status.toLowerCase()}">${escapeHtml(proposalStatusLabel(proposal.status))}</span><span>${formatDate(proposal.date)}</span></div><p>${escapeHtml(proposal.description)}</p>${proposal.estimatedBudgetCents == null ? "" : `<div class="quota-calculation"><span>Estimación inicial</span><strong>${formatMoney(proposal.estimatedBudgetCents)}</strong></div>`}<div class="dialog-section-heading"><div><span>Comparación</span><strong>Presupuestos</strong></div><button class="secondary-button" type="button" data-add-proposal-budget="${escapeHtml(proposal.id)}">${icon("plus")} Añadir</button></div><div class="proposal-budget-list">${budgets.length ? budgets.map((budget) => `<article><div><strong>${escapeHtml(budget.provider)}</strong><small>${formatDate(budget.date)}${budget.description ? ` · ${escapeHtml(budget.description)}` : ""}</small></div><b>${formatMoney(budget.amountCents)}</b>${isAdministrator() ? `<button class="icon-button" type="button" data-delete-proposal-budget="${escapeHtml(budget.id)}" data-proposal="${escapeHtml(proposal.id)}" aria-label="Eliminar presupuesto">${icon("trash")}</button>` : ""}</article>`).join("") : `<p class="empty-copy">Todavía no se ha añadido ningún presupuesto.</p>`}</div>${proposal.notes ? `<p class="family-note"><strong>Notas:</strong> ${escapeHtml(proposal.notes)}</p>` : ""}<div class="dialog-actions">${isAdministrator() ? `<button class="text-button danger-text" type="button" data-delete-proposal="${escapeHtml(proposal.id)}">Eliminar</button><button class="secondary-button" type="button" data-edit-proposal="${escapeHtml(proposal.id)}">Editar propuesta</button>` : ""}<button class="primary-button" type="button" data-close-dialog>Cerrar</button></div></div>`);
+}
+
+function openProposalBudgetForm(proposalId) {
+  const proposal = (data.proposals ?? []).find((item) => item.id === proposalId);
+  if (!proposal) return showToast("No encontramos esa propuesta.");
+  openDialog(`${dialogHeader("Nuevo presupuesto", escapeHtml(proposal.title))}<form class="dialog-form" id="proposal-budget-form"><input type="hidden" name="proposalId" value="${escapeHtml(proposal.id)}"><div class="form-row"><label>Proveedor<input name="provider" required minlength="2" maxlength="120"></label><label>Importe (€)<input name="amount" required inputmode="decimal"></label></div><label>Descripción<input name="description" maxlength="300" placeholder="Qué incluye"></label><label>Fecha<input name="date" required type="date" value="${todayIso()}"></label><label>Notas<textarea name="notes" maxlength="1000"></textarea></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-proposal-back="${escapeHtml(proposal.id)}">Cancelar</button><button class="primary-button" type="submit">Guardar presupuesto</button></div></form>`);
+}
+
 async function createBankPreview(rows, source) {
   const normalized = normalizeBankRows(rows, { source });
   if (isAdministrator()) { try { bankRules = await service.listReconciliationRules(); } catch { bankRules = []; } }
@@ -488,7 +535,8 @@ function renderTopbar(route) {
     inicio: "Resumen de la comunidad",
     familias: `Aportaciones y cuota · ${plan.year}`,
     gastos: `Gastos y derramas · ${plan.year}`,
-    agua: "Lecturas y liquidaciones"
+    agua: "Lecturas y liquidaciones",
+    propuestas: "Ideas y presupuestos"
   };
   let actions = "";
   if (isAdministrator() && route.id === "familias") {
@@ -502,6 +550,9 @@ function renderTopbar(route) {
     const settlement = waterSettlementState().preview;
     const canSettle = isAdministrator() && settlement && settlement.totalUsageM3 > 0;
     actions = `${readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
+  }
+  if (route.id === "propuestas") {
+    actions = `<button class="primary-button" type="button" data-open-proposal aria-label="Nueva propuesta">${icon("plus")}<span class="action-label">Nueva propuesta</span></button>`;
   }
   if (isAdministrator() && route.id === "banco") {
     actions = `<label class="primary-button file-button" aria-label="Añadir extracto">${icon("plus")} ${icon("excel")}<span class="action-label">Añadir</span><input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label>`;
@@ -517,7 +568,7 @@ function renderRoute() {
   const route = visibleRoutes().find((item) => item.id === requestedRoute) || routes[0];
   renderNavigation(route.id);
   renderTopbar(route);
-  const renderers = { inicio: renderDashboard, familias: renderFamilies, banco: renderBank, gastos: renderExpenses, agua: renderWater, administracion: renderAdministration };
+  const renderers = { inicio: renderDashboard, familias: renderFamilies, banco: renderBank, gastos: renderExpenses, agua: renderWater, propuestas: renderProposals, administracion: renderAdministration };
   pageContent.innerHTML = renderers[route.id] ? renderers[route.id]() : renderPlaceholder(route.label);
   document.title = `${route.label} · Comunidad`;
   bindInteractions();
@@ -843,6 +894,40 @@ function bindDialogInteractions() {
       data = undefined;
       renderLogin();
     }
+  });
+
+  dialog.querySelector("[data-edit-proposal]")?.addEventListener("click", (event) => {
+    const proposal = (data.proposals ?? []).find((item) => item.id === event.currentTarget.dataset.editProposal);
+    if (proposal) openProposalForm(proposal);
+  });
+  dialog.querySelector("[data-add-proposal-budget]")?.addEventListener("click", (event) => openProposalBudgetForm(event.currentTarget.dataset.addProposalBudget));
+  dialog.querySelector("[data-proposal-back]")?.addEventListener("click", (event) => openProposalDetail(event.currentTarget.dataset.proposalBack));
+  dialog.querySelector("[data-delete-proposal]")?.addEventListener("click", async (event) => {
+    if (!window.confirm("¿Eliminar esta propuesta y todos sus presupuestos?")) return;
+    const button = event.currentTarget; button.disabled = true; button.textContent = "Eliminando…";
+    try { await service.deleteProposal(button.dataset.deleteProposal); data = await service.getSnapshot(); dialog.close(); renderRoute(); showToast("Propuesta eliminada."); }
+    catch (error) { console.error(error); button.disabled = false; button.textContent = "Eliminar"; showToast("No hemos podido eliminar la propuesta."); }
+  });
+  dialog.querySelectorAll("[data-delete-proposal-budget]").forEach((button) => button.addEventListener("click", async () => {
+    if (!window.confirm("¿Eliminar este presupuesto?")) return;
+    try { await service.deleteProposalBudget(button.dataset.deleteProposalBudget); data = await service.getSnapshot(); openProposalDetail(button.dataset.proposal); showToast("Presupuesto eliminado."); }
+    catch (error) { console.error(error); showToast("No hemos podido eliminar el presupuesto."); }
+  }));
+  dialog.querySelector("#proposal-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault(); const formElement = event.currentTarget; const values = new FormData(formElement); const error = formElement.querySelector(".form-error");
+    const estimatedText = String(values.get("estimatedBudget") ?? "").trim(); const estimatedBudgetCents = estimatedText ? parseEuroInput(estimatedText) : null;
+    if (estimatedBudgetCents !== null && (!Number.isInteger(estimatedBudgetCents) || estimatedBudgetCents < 0)) { error.textContent = "Revisa el presupuesto estimado."; error.hidden = false; return; }
+    const payload = { id: values.get("id") || undefined, title: String(values.get("title")).trim(), description: String(values.get("description")).trim(), date: values.get("date"), estimatedBudgetCents, status: values.get("status") || "IDEA", notes: String(values.get("notes") ?? "").trim() };
+    const submit = formElement.querySelector("button[type='submit']"); submit.disabled = true; submit.textContent = "Guardando…";
+    try { if (payload.id) await service.updateProposal(payload); else await service.createProposal(payload); data = await service.getSnapshot(); dialog.close(); renderRoute(); showToast(payload.id ? "Propuesta actualizada." : "Propuesta creada."); }
+    catch (saveError) { console.error(saveError); error.textContent = "No hemos podido guardar la propuesta. Revisa los datos."; error.hidden = false; submit.disabled = false; submit.textContent = payload.id ? "Guardar cambios" : "Crear propuesta"; }
+  });
+  dialog.querySelector("#proposal-budget-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault(); const formElement = event.currentTarget; const values = new FormData(formElement); const amountCents = parseEuroInput(values.get("amount")); const error = formElement.querySelector(".form-error");
+    if (!Number.isInteger(amountCents) || amountCents <= 0) { error.textContent = "Escribe un importe válido mayor que cero."; error.hidden = false; return; }
+    const submit = formElement.querySelector("button[type='submit']"); submit.disabled = true; submit.textContent = "Guardando…";
+    try { const proposalId = values.get("proposalId"); await service.createProposalBudget({ proposalId, provider: String(values.get("provider")).trim(), amountCents, description: String(values.get("description") ?? "").trim(), date: values.get("date"), notes: String(values.get("notes") ?? "").trim() }); data = await service.getSnapshot(); openProposalDetail(proposalId); showToast("Presupuesto añadido."); }
+    catch (saveError) { console.error(saveError); error.textContent = "No hemos podido guardar el presupuesto."; error.hidden = false; submit.disabled = false; submit.textContent = "Guardar presupuesto"; }
   });
 
   dialog.querySelector("#bank-movement-form")?.addEventListener("submit", async (event) => {
@@ -1206,6 +1291,8 @@ function bindInteractions() {
   document.querySelector("[data-open-quota]")?.addEventListener("click", openQuotaDialog);
   document.querySelector("[data-open-water-tariff]")?.addEventListener("click", openWaterTariffDialog);
   document.querySelector("[data-open-bank-rules]")?.addEventListener("click", openBankRulesDialog);
+  document.querySelector("[data-open-proposal]")?.addEventListener("click", () => openProposalForm());
+  document.querySelectorAll("[data-proposal-id]").forEach((button) => button.addEventListener("click", () => openProposalDetail(button.dataset.proposalId)));
   document.querySelector("[data-open-expense]")?.addEventListener("click", openExpenseDialog);
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
   document.querySelectorAll("[data-edit-expense]").forEach((button) => button.addEventListener("click", () => openExpenseDialog(button.dataset.editExpense)));

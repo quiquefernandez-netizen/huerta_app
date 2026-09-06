@@ -98,6 +98,30 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .import-history small { margin-top: 2px; color: var(--muted); font-size: .72rem; }
 .text-button { min-height: 38px; padding: 6px 9px; border: 0; background: transparent; color: var(--forest-700); font-size: .74rem; font-weight: 800; cursor: pointer; }
 .danger-text { color: #9b3f31; }
+.proposal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.proposal-card { display: flex; min-width: 0; min-height: 240px; flex-direction: column; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); text-align: left; box-shadow: var(--shadow-soft); cursor: pointer; }
+.proposal-card:hover { border-color: var(--forest-300); transform: translateY(-1px); }
+.proposal-card__top, .proposal-card__bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.proposal-card__top small, .proposal-card__bottom small { color: var(--muted); font-size: .7rem; }
+.proposal-card > strong { margin-top: 20px; font-family: var(--font-display); font-size: 1.25rem; line-height: 1.15; }
+.proposal-card__description { display: -webkit-box; overflow: hidden; margin-top: 9px; color: var(--muted); font-size: .82rem; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.proposal-card__bottom { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); }
+.proposal-card__bottom small, .proposal-card__bottom b { display: block; }
+.proposal-card__bottom b { margin-top: 3px; font-size: .82rem; }
+.proposal-card__bottom .icon { color: var(--muted); }
+.proposal-status { display: inline-flex; width: fit-content; align-items: center; min-height: 28px; padding: 4px 9px; border-radius: 999px; background: var(--forest-100); color: var(--forest-700); font-size: .68rem; font-weight: 800; }
+.proposal-status--rechazada { background: #fae5df; color: #934535; }
+.proposal-status--aprobada, .proposal-status--finalizada { background: #e4f1e9; color: #285f47; }
+.proposal-status--pendiente_votacion { background: #f7ecd8; color: #805c24; }
+.proposal-detail { padding: 24px 26px 28px; }
+.proposal-detail__meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .76rem; }
+.proposal-detail > p { margin: 18px 0 0; line-height: 1.6; }
+.proposal-budget-list { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; }
+.proposal-budget-list article { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 13px 14px; border-top: 1px solid var(--line); }
+.proposal-budget-list article:first-child { border-top: 0; }
+.proposal-budget-list strong, .proposal-budget-list small { display: block; }
+.proposal-budget-list small { margin-top: 3px; color: var(--muted); font-size: .7rem; }
+.proposal-budget-list b { white-space: nowrap; }
 .bank-preview-row.is-duplicate { opacity: .68; background: #f7f0e5; }
 .bank-preview-row.is-error { background: #fae5df; }
 .loading-state { display: flex; min-height: 45vh; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
@@ -439,6 +463,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .categories-panel { display: grid; grid-template-columns: 1fr 160px 1fr; align-items: center; gap: 20px; }
   .categories-panel .panel__heading { align-self: start; }
   .family-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .proposal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .water-summary { grid-template-columns: 1fr 1fr; }
   .water-summary .tariff-card { grid-column: 1 / -1; min-height: 105px; }
 }
@@ -511,6 +536,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .inline-summary > div:nth-child(3) { border-left: 0; padding-top: 13px; padding-left: 0; }
   .inline-summary > div:nth-child(4) { padding-top: 13px; }
   .family-grid { grid-template-columns: 1fr; gap: 11px; }
+  .proposal-grid { grid-template-columns: 1fr; gap: 11px; }
+  .proposal-card { min-height: 210px; padding: 17px; }
   .expense-overview { grid-template-columns: 1fr; gap: 12px; }
   .feature-total { min-height: 205px; }
   .category-bars { padding: 20px; }
@@ -531,7 +558,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .app-dialog { max-height: calc(100vh - 24px); border-radius: 20px; }
   .dialog-header { padding: 19px 18px 15px; }
   .dialog-tabs { padding: 13px 18px 0; }
-  .dialog-family-summary, .dialog-form { padding: 19px 18px 22px; }
+  .dialog-family-summary, .dialog-form, .proposal-detail { padding: 19px 18px 22px; }
   .settlement-dialog { padding: 19px 18px 22px; }
   .water-history { padding: 19px 18px 22px; }
   .dialog-section-heading { align-items: stretch; flex-direction: column; }
