@@ -281,11 +281,11 @@ Implementada como `orden_dia`: `id`, `meeting_id`, `position`, `title`, `descrip
 
 ### ACTAS
 
-`id`, `reunion_id`, `fecha`, `asistentes_json`, `contenido`, `estado`, `cerrada_en`, `cerrada_por_usuario_id`.
+Implementada como `actas`: `id`, `meeting_id` único, `minutes_date`, `content`, `status` (`BORRADOR`/`REVISADA`/`CERRADA`), datos de cierre, autoría y fechas. Los asistentes viven en `acta_asistentes` (`minutes_id`, `family_id`) para mantener integridad referencial. Un acta cerrada no puede editarse y protege también la reunión y su orden del día.
 
 ### ACTA_PUNTOS
 
-Tabla añadida para evitar contenido opaco por punto: `id`, `acta_id`, `orden_dia_id`, `asunto`, `resumen`, `decision`, `resultado_votacion_json`, `observaciones`.
+Implementada como `acta_puntos`: `id`, `minutes_id`, `agenda_item_id`, `position`, `subject`, `summary`, `decision`, `voting_result_json`, `observations`. Al crear el borrador se copia el orden del día y, si el punto enlaza una propuesta, se conserva una instantánea del resultado de su votación.
 
 ### DOCUMENTOS
 

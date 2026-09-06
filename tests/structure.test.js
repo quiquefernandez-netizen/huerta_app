@@ -72,6 +72,11 @@ test("Reuniones está disponible con orden del día editable y responsive", asyn
   assert.match(source, /data-move-agenda="up"/);
   assert.match(styles, /\.meeting-card/);
   assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?\.agenda-list > li/);
+  assert.match(source, /function meetingMinutesMarkup/);
+  assert.match(source, /id="minutes-form"/);
+  assert.match(source, /id="minutes-item-form"/);
+  assert.match(source, /data-close-minutes/);
+  assert.match(styles, /\.minutes-items/);
 });
 
 test("la interfaz deja al perfil normal registrar y reserva la administración", async () => {

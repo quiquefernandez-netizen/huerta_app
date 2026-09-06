@@ -144,6 +144,8 @@ export class DemoDataService {
 
   async deleteMeeting(id) {
     await delay(180);
+    const target = (this.data.meetings ?? []).find((item) => item.id === id);
+    if (target?.minutes?.status === "CERRADA") throw new Error("No se puede eliminar una reunión con el acta cerrada.");
     const before = (this.data.meetings ?? []).length; this.data.meetings = (this.data.meetings ?? []).filter((item) => item.id !== id);
     if (this.data.meetings.length === before) throw new Error("La reunión no existe.");
     this.refreshNextMeeting(); return true;
@@ -182,6 +184,40 @@ export class DemoDataService {
     const byId = new Map(meeting.agenda.map((item) => [item.id, item]));
     if (itemIds.some((id) => !byId.has(id))) throw new Error("El orden no es válido.");
     meeting.agenda = itemIds.map((id, index) => ({ ...byId.get(id), position: index + 1 })); return true;
+  }
+
+  async createMeetingMinutes(meetingId) {
+    await delay(180);
+    const meeting = (this.data.meetings ?? []).find((item) => item.id === meetingId);
+    if (!meeting || meeting.minutes) throw new Error("La reunión no existe o ya tiene acta.");
+    meeting.minutes = { id: `act_demo_${crypto.randomUUID()}`, meetingId, date: meeting.date, content: "", status: "BORRADOR", closedAt: null, attendees: [], items: (meeting.agenda ?? []).map((item) => ({ id: `acp_demo_${crypto.randomUUID()}`, agendaItemId: item.id, position: item.position, subject: item.title, summary: "", decision: "", votingResult: null, observations: "" })) };
+    return clone(meeting.minutes);
+  }
+
+  async updateMeetingMinutes(minutes) {
+    await delay(180);
+    const meeting = (this.data.meetings ?? []).find((item) => item.minutes?.id === minutes.id);
+    if (!meeting?.minutes || meeting.minutes.status === "CERRADA") throw new Error("El acta no existe o está cerrada.");
+    meeting.minutes = { ...meeting.minutes, content: minutes.content, status: minutes.status, attendees: minutes.attendeeFamilyIds.map((familyId) => ({ familyId, familyName: this.data.families.find((family) => family.id === familyId)?.name ?? "Familia" })) };
+    return true;
+  }
+
+  async updateMinutesItem(item) {
+    await delay(160);
+    for (const meeting of this.data.meetings ?? []) {
+      if (meeting.minutes?.status === "CERRADA") continue;
+      const index = meeting.minutes?.items?.findIndex((value) => value.id === item.id) ?? -1;
+      if (index >= 0) { meeting.minutes.items[index] = { ...meeting.minutes.items[index], summary: item.summary, decision: item.decision, observations: item.observations }; return true; }
+    }
+    throw new Error("El punto del acta no existe o está cerrado.");
+  }
+
+  async closeMeetingMinutes(id) {
+    await delay(180);
+    const meeting = (this.data.meetings ?? []).find((item) => item.minutes?.id === id);
+    if (!meeting?.minutes || meeting.minutes.status === "CERRADA") throw new Error("El acta no existe o ya está cerrada.");
+    if (!meeting.minutes.attendees.length || meeting.minutes.items.some((item) => !item.summary || !item.decision)) throw new Error("Completa asistentes, resúmenes y decisiones.");
+    Object.assign(meeting.minutes, { status: "CERRADA", closedAt: new Date().toISOString() }); meeting.status = "CELEBRADA"; this.refreshNextMeeting(); return true;
   }
 
   async updateAssessment(assessment) {
@@ -387,10 +423,11 @@ export class SupabaseDataService {
   }
 
   async getSnapshot() {
-    const [snapshot, proposals, meetings] = await Promise.all([this.rpc("get_community_snapshot"), this.rpc("list_proposals"), this.rpc("list_meetings")]);
+    const [snapshot, proposals, meetings, minutes] = await Promise.all([this.rpc("get_community_snapshot"), this.rpc("list_proposals"), this.rpc("list_meetings"), this.rpc("list_meeting_minutes")]);
     const next = [...meetings].filter((meeting) => meeting.status === "PLANIFICADA" && meeting.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))[0];
     const nextMeeting = next ? { day: Number(next.date.slice(8, 10)), month: new Intl.DateTimeFormat("es-ES", { month: "long" }).format(new Date(`${next.date}T12:00:00`)), time: next.time, place: next.place } : { day: "—", month: "Sin fecha", time: "", place: "Por concretar" };
-    return { ...snapshot, community: { ...snapshot.community, nextMeeting }, proposals, meetings };
+    const minutesByMeeting = new Map(minutes.map((item) => [item.meetingId, item]));
+    return { ...snapshot, community: { ...snapshot.community, nextMeeting }, proposals, meetings: meetings.map((meeting) => ({ ...meeting, minutes: minutesByMeeting.get(meeting.id) ?? null })) };
   }
 
   createFamily(family) {
@@ -575,6 +612,10 @@ export class SupabaseDataService {
   updateAgendaItem(item) { return this.rpc("update_agenda_item", { p_id: item.id, p_title: item.title, p_description: item.description ?? "", p_proposal_id: item.proposalId || null, p_notes: item.notes ?? "" }); }
   deleteAgendaItem(id) { return this.rpc("delete_agenda_item", { p_id: id }); }
   reorderAgendaItems(meetingId, itemIds) { return this.rpc("reorder_agenda_items", { p_meeting_id: meetingId, p_item_ids: itemIds }); }
+  createMeetingMinutes(meetingId) { return this.rpc("create_meeting_minutes", { p_meeting_id: meetingId }); }
+  updateMeetingMinutes(minutes) { return this.rpc("update_meeting_minutes", { p_id: minutes.id, p_attendee_family_ids: minutes.attendeeFamilyIds, p_content: minutes.content ?? "", p_status: minutes.status }); }
+  updateMinutesItem(item) { return this.rpc("update_minutes_item", { p_id: item.id, p_summary: item.summary, p_decision: item.decision, p_observations: item.observations ?? "" }); }
+  closeMeetingMinutes(id) { return this.rpc("close_meeting_minutes", { p_id: id }); }
 }
 
 export function createDataService(config = globalThis.APP_CONFIG) {

@@ -264,11 +264,25 @@ test("la demo permite preparar y reordenar el orden del día", async () => {
   assert.deepEqual(saved.agenda.map((item) => [item.position, item.title]), [[1, "Segundo asunto"], [2, "Primer asunto"]]);
 });
 
+test("la demo crea, completa y protege un acta cerrada", async () => {
+  const service = new DemoDataService();
+  const meeting = await service.createMeeting({ date: "2026-11-08", time: "18:00", place: "Zona común", notes: "" });
+  await service.createAgendaItem({ meetingId: meeting.id, title: "Estado de cuentas", description: "", proposalId: null, notes: "" });
+  const minutes = await service.createMeetingMinutes(meeting.id);
+  await service.updateMeetingMinutes({ id: minutes.id, attendeeFamilyIds: ["fam_roble"], content: "Resumen general", status: "REVISADA" });
+  await service.updateMinutesItem({ id: minutes.items[0].id, summary: "Se revisaron las cuentas.", decision: "Aprobadas.", observations: "" });
+  await service.closeMeetingMinutes(minutes.id);
+  const saved = (await service.getSnapshot()).meetings.find((item) => item.id === meeting.id);
+  assert.equal(saved.status, "CELEBRADA");
+  assert.equal(saved.minutes.status, "CERRADA");
+  await assert.rejects(() => service.updateMeetingMinutes({ id: minutes.id, attendeeFamilyIds: [], content: "", status: "BORRADOR" }), /cerrada/i);
+});
+
 test("Supabase carga propuestas y usa RPC protegidas para propuesta y presupuesto", async () => {
   const calls = [];
   const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
     getAccessToken: async () => "jwt-demo",
-    fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => /list_(proposals|meetings)$/.test(url) ? [] : { id: "demo" } }; }
+    fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => /list_(proposals|meetings|meeting_minutes)$/.test(url) ? [] : { id: "demo" } }; }
   });
   const snapshot = await service.getSnapshot();
   await service.createProposal({ title: "Idea", description: "Descripción", date: "2026-09-06", estimatedBudgetCents: 10000, notes: "" });
@@ -282,6 +296,7 @@ test("Supabase carga propuestas y usa RPC protegidas para propuesta y presupuest
   assert.ok(calls.some((call) => call.url.endsWith("/rpc/set_proposal_voting_status")));
   assert.ok(calls.some((call) => call.url.endsWith("/rpc/cast_proposal_vote")));
   assert.ok(calls.some((call) => call.url.endsWith("/rpc/list_meetings")));
+  assert.ok(calls.some((call) => call.url.endsWith("/rpc/list_meeting_minutes")));
 });
 
 test("Supabase gestiona reuniones y orden del día solo mediante RPC", async () => {
@@ -292,6 +307,17 @@ test("Supabase gestiona reuniones y orden del día solo mediante RPC", async () 
   await service.reorderAgendaItems("reu-1", ["ord-2", "ord-1"]);
   assert.deepEqual(calls.map((call) => call.url.split("/").at(-1)), ["create_meeting", "create_agenda_item", "reorder_agenda_items"]);
   assert.deepEqual(JSON.parse(calls[2].options.body), { p_meeting_id: "reu-1", p_item_ids: ["ord-2", "ord-1"] });
+});
+
+test("Supabase guarda y cierra actas mediante funciones protegidas", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", { getAccessToken: async () => "jwt-demo", fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => true }; } });
+  await service.createMeetingMinutes("reu-1");
+  await service.updateMeetingMinutes({ id: "act-1", attendeeFamilyIds: ["fam-1"], content: "Resumen", status: "REVISADA" });
+  await service.updateMinutesItem({ id: "acp-1", summary: "Resumen", decision: "Decisión", observations: "" });
+  await service.closeMeetingMinutes("act-1");
+  assert.deepEqual(calls.map((call) => call.url.split("/").at(-1)), ["create_meeting_minutes", "update_meeting_minutes", "update_minutes_item", "close_meeting_minutes"]);
+  assert.deepEqual(JSON.parse(calls[1].options.body), { p_id: "act-1", p_attendee_family_ids: ["fam-1"], p_content: "Resumen", p_status: "REVISADA" });
 });
 
 test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {

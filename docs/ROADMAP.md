@@ -48,7 +48,7 @@ El flujo principal está completado: importación XLS/XLSX/CSV, previsualizació
 
 ## Fase 3 — vida comunitaria
 
-Completados propuestas, presupuestos, votaciones internas, reuniones y orden del día. Administración puede programar reuniones y preparar, editar, borrar y reordenar sus puntos; ambos perfiles consultan todo y el Dashboard toma la próxima reunión de estos datos. Pendiente: actas y documentos.
+Completados propuestas, presupuestos, votaciones internas, reuniones, orden del día y actas estructuradas. Administración prepara el borrador por puntos, indica asistentes, revisa y cierra; un acta cerrada y su reunión quedan protegidas. Pendiente: documentos.
 
 ## Fase 4 — solo tras estabilizar lo anterior
 

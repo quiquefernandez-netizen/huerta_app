@@ -15,6 +15,7 @@ const quotaReferenceMigrationUrl = new URL("../supabase/migrations/026_quota_as_
 const proposalsMigrationUrl = new URL("../supabase/migrations/027_proposals_and_budgets.sql", import.meta.url);
 const votingMigrationUrl = new URL("../supabase/migrations/028_proposal_voting.sql", import.meta.url);
 const meetingsMigrationUrl = new URL("../supabase/migrations/029_meetings_and_agenda.sql", import.meta.url);
+const minutesMigrationUrl = new URL("../supabase/migrations/030_meeting_minutes.sql", import.meta.url);
 const edgeFunctionUrl = new URL("../supabase/functions/unlock-access/index.ts", import.meta.url);
 
 test("la API anónima permanece cerrada", async () => {
@@ -184,4 +185,17 @@ test("reuniones y orden del día son consultables pero solo administrables media
   }
   assert.match(sql, /unique \(meeting_id, position\) deferrable initially deferred/i);
   assert.match(sql, /audit_orden_dia_changes/i);
+});
+
+test("las actas cerradas quedan protegidas y sus cambios se auditan", async () => {
+  const sql = await readFile(minutesMigrationUrl, "utf8");
+  assert.match(sql, /alter table public\.actas enable row level security/i);
+  assert.match(sql, /revoke all on table public\.actas, public\.acta_asistentes, public\.acta_puntos from anon, authenticated/i);
+  assert.match(sql.match(/function public\.list_meeting_minutes[\s\S]*?\$\$;/i)?.[0] ?? "", /current_user_is_active/);
+  for (const name of ["create_meeting_minutes", "update_meeting_minutes", "update_minutes_item", "close_meeting_minutes"]) {
+    assert.match(sql.match(new RegExp(`function public\\.${name}[\\s\\S]*?\\$\\$;`, "i"))?.[0] ?? "", /current_user_is_admin/);
+  }
+  assert.match(sql, /status = 'CERRADA'[\s\S]*closed_at/i);
+  assert.match(sql, /protect_closed_minutes_agenda_changes/i);
+  assert.match(sql, /audit_acta_puntos_changes/i);
 });

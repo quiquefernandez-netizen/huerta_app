@@ -94,6 +94,8 @@ La votación vive dentro del detalle de la propuesta: resume el resultado, muest
 
 Reuniones presenta cada encuentro como una tarjeta con fecha, lugar, estado y número de puntos. El detalle muestra un orden del día numerado; en móvil las acciones de edición y orden pasan debajo del texto para conservar áreas táctiles cómodas.
 
+El acta se prepara dentro de la propia reunión. Se divide por puntos con etiquetas claras de resumen y decisión, muestra asistentes y evita un único formulario largo. El cierre es una acción confirmada y explica qué falta antes de permitirlo.
+
 Gastos pregunta de forma explícita si pagó la cuenta común o una o varias familias. Si pagaron familias, permite detallar cuánto adelantó cada una y valida que la suma coincida. Derramas es una acción separada: se eligen participantes y se muestra el reparto antes de confirmar.
 
 ## Pendientes de diseño

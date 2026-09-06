@@ -57,13 +57,13 @@ export const demoData = Object.freeze({
     { id: "prop_demo_2", title: "Zona común con más sombra", description: "Estudiar una solución sencilla de sombra para los meses de verano.", date: "2026-09-01", estimatedBudgetCents: null, status: "IDEA", notes: "", voting: null, budgets: [] }
   ],
   meetings: [
-    { id: "reu_demo_1", date: "2026-10-18", time: "18:30", place: "Zona común", status: "PLANIFICADA", notes: "", agenda: [
+    { id: "reu_demo_1", date: "2026-10-18", time: "18:30", place: "Zona común", status: "PLANIFICADA", notes: "", minutes: null, agenda: [
       { id: "ord_demo_1", position: 1, title: "Estado de las cuentas", description: "Resumen de aportaciones, gastos y banco.", proposalId: null, proposalTitle: null, notes: "" },
       { id: "ord_demo_2", position: 2, title: "Iluminación de la entrada", description: "Revisar los presupuestos recibidos.", proposalId: "prop_demo_1", proposalTitle: "Mejorar la iluminación de la entrada", notes: "" }
     ] },
     { id: "reu_demo_2", date: "2026-07-12", time: "19:00", place: "Zona común", status: "CELEBRADA", notes: "Reunión ficticia de muestra.", agenda: [
       { id: "ord_demo_3", position: 1, title: "Consumo de agua", description: "Revisión del consumo del semestre.", proposalId: null, proposalTitle: null, notes: "" }
-    ] }
+    ], minutes: { id: "act_demo_1", meetingId: "reu_demo_2", date: "2026-07-12", content: "Resumen general ficticio de la reunión.", status: "REVISADA", closedAt: null, attendees: [{ familyId: "fam_roble", familyName: "Familia Roble" }, { familyId: "fam_olivo", familyName: "Familia Olivo" }], items: [{ id: "acp_demo_1", agendaItemId: "ord_demo_3", position: 1, subject: "Consumo de agua", summary: "Se revisó el consumo del semestre.", decision: "Continuar con las lecturas periódicas.", votingResult: null, observations: "" }] } }
   ],
   expenseCategories: [
     { name: "Agua general", amountCents: 46000, color: "#3f7f8b" },
