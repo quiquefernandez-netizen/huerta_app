@@ -99,7 +99,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .text-button { min-height: 38px; padding: 6px 9px; border: 0; background: transparent; color: var(--forest-700); font-size: .74rem; font-weight: 800; cursor: pointer; }
 .danger-text { color: #9b3f31; }
 .proposal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.proposal-card { display: flex; min-width: 0; min-height: 240px; flex-direction: column; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); text-align: left; box-shadow: var(--shadow-soft); cursor: pointer; }
+.proposal-card { display: flex; min-width: 0; min-height: 240px; flex-direction: column; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); text-align: left; box-shadow: var(--shadow); cursor: pointer; }
 .proposal-card:hover { border-color: var(--forest-300); transform: translateY(-1px); }
 .proposal-card__top, .proposal-card__bottom { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .proposal-card__top small, .proposal-card__bottom small { color: var(--muted); font-size: .7rem; }
@@ -110,8 +110,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .proposal-card__bottom b { margin-top: 3px; font-size: .82rem; }
 .proposal-card__bottom .icon { color: var(--muted); }
 .proposal-status { display: inline-flex; width: fit-content; align-items: center; min-height: 28px; padding: 4px 9px; border-radius: 999px; background: var(--forest-100); color: var(--forest-700); font-size: .68rem; font-weight: 800; }
-.proposal-status--rechazada { background: #fae5df; color: #934535; }
-.proposal-status--aprobada, .proposal-status--finalizada { background: #e4f1e9; color: #285f47; }
+.proposal-status--rechazada, .proposal-status--cancelada { background: #fae5df; color: #934535; }
+.proposal-status--aprobada, .proposal-status--finalizada, .proposal-status--celebrada { background: #e4f1e9; color: #285f47; }
 .proposal-status--pendiente_votacion { background: #f7ecd8; color: #805c24; }
 .proposal-detail { padding: 24px 26px 28px; }
 .proposal-detail__meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: .76rem; }
@@ -139,6 +139,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .voting-form .form-error { grid-column: 1 / -1; margin: 0; }
 .voting-disclaimer { display: block; margin-top: 11px; color: var(--muted); font-size: .66rem; line-height: 1.45; }
 .voting-closed { margin: 12px 0 0 !important; padding: 11px 12px; border-radius: 11px; background: var(--surface-soft); color: var(--muted); font-size: .74rem; }
+.meeting-list { display: grid; gap: 12px; }
+.meeting-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 16px; width: 100%; min-height: 88px; padding: 14px 18px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); text-align: left; box-shadow: var(--shadow); cursor: pointer; }
+.meeting-card__date { display: grid; width: 52px; min-height: 54px; place-content: center; border-radius: 13px; background: var(--forest-100); color: var(--forest-700); text-align: center; }
+.meeting-card__date strong, .meeting-card__date small, .meeting-card__copy strong, .meeting-card__copy small { display: block; }
+.meeting-card__date strong { font-family: var(--font-display); font-size: 1.3rem; line-height: 1; }
+.meeting-card__date small { margin-top: 3px; font-size: .66rem; text-transform: uppercase; }
+.meeting-card__copy small { margin-top: 4px; color: var(--muted); font-size: .72rem; }
+.meeting-card > .icon { color: var(--muted); }
+.meeting-detail { padding: 24px 26px 28px; }
+.meeting-detail__summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.agenda-list { display: grid; gap: 9px; margin: 14px 0 0; padding: 0; list-style: none; }
+.agenda-list > li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 12px; padding: 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft); }
+.agenda-list__number { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: var(--forest-100); color: var(--forest-700); font-weight: 800; }
+.agenda-list p { margin: 4px 0 0; color: var(--muted); font-size: .74rem; line-height: 1.45; }
+.agenda-list small { display: block; margin-top: 5px; color: var(--forest-700); font-size: .68rem; }
+.agenda-list__actions { display: flex; gap: 4px; }
+.agenda-list__actions button { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.agenda-list__actions button:disabled { cursor: default; opacity: .35; }
+.agenda-list__actions .icon { width: 17px; height: 17px; }
+.agenda-list > .agenda-list__empty { display: block; color: var(--muted); font-size: .75rem; text-align: center; }
 .bank-preview-row.is-duplicate { opacity: .68; background: #f7f0e5; }
 .bank-preview-row.is-error { background: #fae5df; }
 .loading-state { display: flex; min-height: 45vh; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
@@ -575,13 +595,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .app-dialog { max-height: calc(100vh - 24px); border-radius: 20px; }
   .dialog-header { padding: 19px 18px 15px; }
   .dialog-tabs { padding: 13px 18px 0; }
-  .dialog-family-summary, .dialog-form, .proposal-detail { padding: 19px 18px 22px; }
+  .dialog-family-summary, .dialog-form, .proposal-detail, .meeting-detail { padding: 19px 18px 22px; }
   .settlement-dialog { padding: 19px 18px 22px; }
   .water-history { padding: 19px 18px 22px; }
   .dialog-section-heading { align-items: stretch; flex-direction: column; }
   .dialog-section-heading .secondary-button { width: 100%; }
   .voting-form { grid-template-columns: 1fr; }
   .voting-form .primary-button { width: 100%; }
+  .meeting-card { grid-template-columns: auto minmax(0, 1fr) auto; gap: 11px; padding: 12px; }
+  .meeting-card > .proposal-status { grid-column: 2; width: fit-content; }
+  .meeting-card > .icon { grid-column: 3; grid-row: 1 / span 2; }
+  .agenda-list > li { grid-template-columns: auto minmax(0, 1fr); }
+  .agenda-list__actions { grid-column: 2; flex-wrap: wrap; }
   .form-row { grid-template-columns: 1fr; }
   .choice-options { grid-template-columns: 1fr; }
   .payer-row { grid-template-columns: 1fr 115px; }

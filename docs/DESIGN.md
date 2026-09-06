@@ -92,6 +92,8 @@ Propuestas usa tarjetas breves con estado, fecha y referencia económica. Al abr
 
 La votación vive dentro del detalle de la propuesta: resume el resultado, muestra la situación de cada familia y pide elegir la familia de forma explícita antes de guardar. Administración abre y cierra la votación; mientras esté abierta, una familia puede corregir su decisión.
 
+Reuniones presenta cada encuentro como una tarjeta con fecha, lugar, estado y número de puntos. El detalle muestra un orden del día numerado; en móvil las acciones de edición y orden pasan debajo del texto para conservar áreas táctiles cómodas.
+
 Gastos pregunta de forma explícita si pagó la cuenta común o una o varias familias. Si pagaron familias, permite detallar cuánto adelantó cada una y valida que la suma coincida. Derramas es una acción separada: se eligen participantes y se muestra el reparto antes de confirmar.
 
 ## Pendientes de diseño

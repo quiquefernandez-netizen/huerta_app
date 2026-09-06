@@ -11,7 +11,7 @@ const routes = [
   { id: "gastos", label: "Gastos", icon: "receipt", enabled: true },
   { id: "agua", label: "Agua", icon: "water", enabled: true },
   { id: "propuestas", label: "Propuestas", icon: "bulb", enabled: true },
-  { id: "reuniones", label: "Reuniones", icon: "calendar", enabled: false },
+  { id: "reuniones", label: "Reuniones", icon: "calendar", enabled: true },
   { id: "documentos", label: "Documentos", icon: "folder", enabled: false },
   { id: "administracion", label: "Administración", icon: "settings", enabled: true }
 ];
@@ -475,6 +475,33 @@ function openProposalBudgetForm(proposalId) {
   openDialog(`${dialogHeader("Nuevo presupuesto", escapeHtml(proposal.title))}<form class="dialog-form" id="proposal-budget-form"><input type="hidden" name="proposalId" value="${escapeHtml(proposal.id)}"><div class="form-row"><label>Proveedor<input name="provider" required minlength="2" maxlength="120"></label><label>Importe (€)<input name="amount" required inputmode="decimal"></label></div><label>Descripción<input name="description" maxlength="300" placeholder="Qué incluye"></label><label>Fecha<input name="date" required type="date" value="${todayIso()}"></label><label>Notas<textarea name="notes" maxlength="1000"></textarea></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-proposal-back="${escapeHtml(proposal.id)}">Cancelar</button><button class="primary-button" type="submit">Guardar presupuesto</button></div></form>`);
 }
 
+const meetingStatusLabels = { PLANIFICADA: "Planificada", CELEBRADA: "Celebrada", CANCELADA: "Cancelada" };
+
+function renderMeetings() {
+  const meetings = [...(data.meetings ?? [])].sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time));
+  const planned = meetings.filter((meeting) => meeting.status === "PLANIFICADA");
+  const next = [...planned].filter((meeting) => meeting.date >= todayIso()).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))[0];
+  const agendaCount = sumCents(meetings, (meeting) => (meeting.agenda ?? []).length);
+  return `<section class="inline-summary" aria-label="Resumen de reuniones"><div><span>Próxima</span><strong>${next ? formatDate(next.date) : "Sin fecha"}</strong></div><div><span>Planificadas</span><strong>${planned.length}</strong></div><div><span>Celebradas</span><strong>${meetings.filter((meeting) => meeting.status === "CELEBRADA").length}</strong></div><div><span>Puntos preparados</span><strong>${agendaCount}</strong></div></section><section class="meeting-list" aria-label="Reuniones">${meetings.length ? meetings.map((meeting) => `<button class="meeting-card" type="button" data-meeting-id="${escapeHtml(meeting.id)}"><span class="meeting-card__date"><strong>${meeting.date.slice(8, 10)}</strong><small>${new Intl.DateTimeFormat("es-ES", { month: "short" }).format(new Date(`${meeting.date}T12:00:00`))}</small></span><span class="meeting-card__copy"><strong>${formatDate(meeting.date)} · ${escapeHtml(meeting.time)}</strong><small>${escapeHtml(meeting.place)} · ${(meeting.agenda ?? []).length} ${(meeting.agenda ?? []).length === 1 ? "punto" : "puntos"}</small></span><span class="proposal-status proposal-status--${meeting.status.toLowerCase()}">${escapeHtml(meetingStatusLabels[meeting.status] ?? meeting.status)}</span>${icon("arrow")}</button>`).join("") : `<div class="empty-list"><strong>Aún no hay reuniones.</strong><span>Administración puede programar la primera.</span></div>`}</section>`;
+}
+
+function openMeetingForm(meeting = null) {
+  const statuses = Object.entries(meetingStatusLabels).map(([value, label]) => `<option value="${value}"${meeting?.status === value ? " selected" : ""}>${label}</option>`).join("");
+  openDialog(`${dialogHeader(meeting ? "Editar reunión" : "Nueva reunión", meeting ? formatDate(meeting.date) : "Programar encuentro")}<form class="dialog-form" id="meeting-form"><input type="hidden" name="id" value="${escapeHtml(meeting?.id ?? "")}"><div class="form-row"><label>Fecha<input name="date" type="date" required value="${meeting?.date ?? todayIso()}"></label><label>Hora<input name="time" type="time" required value="${meeting?.time ?? "18:30"}"></label></div><label>Lugar<input name="place" required minlength="2" maxlength="160" value="${escapeHtml(meeting?.place ?? "")}" placeholder="Zona común"></label>${meeting ? `<label>Estado<select name="status">${statuses}</select></label>` : ""}<label>Notas<textarea name="notes" maxlength="1000">${escapeHtml(meeting?.notes ?? "")}</textarea></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">${meeting ? "Guardar cambios" : "Crear reunión"}</button></div></form>`);
+}
+
+function openAgendaItemForm(meetingId, item = null) {
+  const proposalOptions = (data.proposals ?? []).map((proposal) => `<option value="${escapeHtml(proposal.id)}"${item?.proposalId === proposal.id ? " selected" : ""}>${escapeHtml(proposal.title)}</option>`).join("");
+  openDialog(`${dialogHeader(item ? "Editar punto" : "Nuevo punto", "Orden del día")}<form class="dialog-form" id="agenda-item-form"><input type="hidden" name="id" value="${escapeHtml(item?.id ?? "")}"><input type="hidden" name="meetingId" value="${escapeHtml(meetingId)}"><label>Título<input name="title" required minlength="3" maxlength="180" value="${escapeHtml(item?.title ?? "")}"></label><label>Descripción<textarea name="description" maxlength="3000">${escapeHtml(item?.description ?? "")}</textarea></label><label>Propuesta relacionada<select name="proposalId"><option value="">Ninguna</option>${proposalOptions}</select></label><label>Notas<textarea name="notes" maxlength="1000">${escapeHtml(item?.notes ?? "")}</textarea></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-meeting-back="${escapeHtml(meetingId)}">Cancelar</button><button class="primary-button" type="submit">Guardar punto</button></div></form>`);
+}
+
+function openMeetingDetail(meetingId) {
+  const meeting = (data.meetings ?? []).find((item) => item.id === meetingId);
+  if (!meeting) return showToast("No encontramos esa reunión.");
+  const agenda = meeting.agenda ?? [];
+  openDialog(`${dialogHeader("Reunión", `${formatDate(meeting.date)} · ${escapeHtml(meeting.time)}`)}<div class="meeting-detail"><div class="meeting-detail__summary"><span class="proposal-status proposal-status--${meeting.status.toLowerCase()}">${escapeHtml(meetingStatusLabels[meeting.status])}</span><strong>${escapeHtml(meeting.place)}</strong></div><div class="dialog-section-heading"><div><span>Temas a tratar</span><strong>Orden del día</strong></div>${isAdministrator() ? `<button class="secondary-button" type="button" data-add-agenda-item="${escapeHtml(meeting.id)}">${icon("plus")} Añadir punto</button>` : ""}</div><ol class="agenda-list">${agenda.length ? agenda.map((item, index) => `<li><span class="agenda-list__number">${item.position}</span><div><strong>${escapeHtml(item.title)}</strong>${item.description ? `<p>${escapeHtml(item.description)}</p>` : ""}${item.proposalTitle ? `<small>Propuesta: ${escapeHtml(item.proposalTitle)}</small>` : ""}</div>${isAdministrator() ? `<div class="agenda-list__actions"><button type="button" data-move-agenda="up" data-item="${escapeHtml(item.id)}" data-meeting="${escapeHtml(meeting.id)}"${index === 0 ? " disabled" : ""} aria-label="Subir punto">↑</button><button type="button" data-move-agenda="down" data-item="${escapeHtml(item.id)}" data-meeting="${escapeHtml(meeting.id)}"${index === agenda.length - 1 ? " disabled" : ""} aria-label="Bajar punto">↓</button><button class="icon-button" type="button" data-edit-agenda-item="${escapeHtml(item.id)}" data-meeting="${escapeHtml(meeting.id)}" aria-label="Editar punto">${icon("edit")}</button><button class="icon-button" type="button" data-delete-agenda-item="${escapeHtml(item.id)}" data-meeting="${escapeHtml(meeting.id)}" aria-label="Eliminar punto">${icon("trash")}</button></div>` : ""}</li>`).join("") : `<li class="agenda-list__empty">El orden del día todavía está vacío.</li>`}</ol>${meeting.notes ? `<p class="family-note"><strong>Notas:</strong> ${escapeHtml(meeting.notes)}</p>` : ""}<div class="dialog-actions">${isAdministrator() ? `<button class="text-button danger-text" type="button" data-delete-meeting="${escapeHtml(meeting.id)}">Eliminar</button><button class="secondary-button" type="button" data-edit-meeting="${escapeHtml(meeting.id)}">Editar reunión</button>` : ""}<button class="primary-button" type="button" data-close-dialog>Cerrar</button></div></div>`);
+}
+
 async function createBankPreview(rows, source) {
   const normalized = normalizeBankRows(rows, { source });
   if (isAdministrator()) { try { bankRules = await service.listReconciliationRules(); } catch { bankRules = []; } }
@@ -551,7 +578,8 @@ function renderTopbar(route) {
     familias: `Aportaciones y cuota · ${plan.year}`,
     gastos: `Gastos y derramas · ${plan.year}`,
     agua: "Lecturas y liquidaciones",
-    propuestas: "Ideas y presupuestos"
+    propuestas: "Ideas y presupuestos",
+    reuniones: "Próximas reuniones y orden del día"
   };
   let actions = "";
   if (isAdministrator() && route.id === "familias") {
@@ -569,6 +597,7 @@ function renderTopbar(route) {
   if (route.id === "propuestas") {
     actions = `<button class="primary-button" type="button" data-open-proposal aria-label="Nueva propuesta">${icon("plus")}<span class="action-label">Nueva propuesta</span></button>`;
   }
+  if (isAdministrator() && route.id === "reuniones") actions = `<button class="primary-button" type="button" data-open-meeting>${icon("plus")}<span class="action-label">Nueva reunión</span></button>`;
   if (isAdministrator() && route.id === "banco") {
     actions = `<label class="primary-button file-button" aria-label="Añadir extracto">${icon("plus")} ${icon("excel")}<span class="action-label">Añadir</span><input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label>`;
   }
@@ -583,7 +612,7 @@ function renderRoute() {
   const route = visibleRoutes().find((item) => item.id === requestedRoute) || routes[0];
   renderNavigation(route.id);
   renderTopbar(route);
-  const renderers = { inicio: renderDashboard, familias: renderFamilies, banco: renderBank, gastos: renderExpenses, agua: renderWater, propuestas: renderProposals, administracion: renderAdministration };
+  const renderers = { inicio: renderDashboard, familias: renderFamilies, banco: renderBank, gastos: renderExpenses, agua: renderWater, propuestas: renderProposals, reuniones: renderMeetings, administracion: renderAdministration };
   pageContent.innerHTML = renderers[route.id] ? renderers[route.id]() : renderPlaceholder(route.label);
   document.title = `${route.label} · Comunidad`;
   bindInteractions();
@@ -909,6 +938,42 @@ function bindDialogInteractions() {
       data = undefined;
       renderLogin();
     }
+  });
+
+  dialog.querySelector("[data-edit-meeting]")?.addEventListener("click", (event) => {
+    const meeting = (data.meetings ?? []).find((item) => item.id === event.currentTarget.dataset.editMeeting); if (meeting) openMeetingForm(meeting);
+  });
+  dialog.querySelector("[data-add-agenda-item]")?.addEventListener("click", (event) => openAgendaItemForm(event.currentTarget.dataset.addAgendaItem));
+  dialog.querySelector("[data-meeting-back]")?.addEventListener("click", (event) => openMeetingDetail(event.currentTarget.dataset.meetingBack));
+  dialog.querySelector("[data-edit-agenda-item]")?.addEventListener("click", (event) => {
+    const meeting = (data.meetings ?? []).find((value) => value.id === event.currentTarget.dataset.meeting); const item = meeting?.agenda?.find((value) => value.id === event.currentTarget.dataset.editAgendaItem); if (item) openAgendaItemForm(meeting.id, item);
+  });
+  dialog.querySelector("[data-delete-meeting]")?.addEventListener("click", async (event) => {
+    if (!window.confirm("¿Eliminar esta reunión y todo su orden del día?")) return;
+    try { await service.deleteMeeting(event.currentTarget.dataset.deleteMeeting); data = await service.getSnapshot(); dialog.close(); renderRoute(); showToast("Reunión eliminada."); }
+    catch (error) { console.error(error); showToast("No hemos podido eliminar la reunión."); }
+  });
+  dialog.querySelectorAll("[data-delete-agenda-item]").forEach((button) => button.addEventListener("click", async () => {
+    if (!window.confirm("¿Eliminar este punto del orden del día?")) return;
+    try { await service.deleteAgendaItem(button.dataset.deleteAgendaItem); data = await service.getSnapshot(); openMeetingDetail(button.dataset.meeting); showToast("Punto eliminado."); }
+    catch (error) { console.error(error); showToast("No hemos podido eliminar el punto."); }
+  }));
+  dialog.querySelectorAll("[data-move-agenda]").forEach((button) => button.addEventListener("click", async () => {
+    const meeting = (data.meetings ?? []).find((item) => item.id === button.dataset.meeting); const ids = meeting.agenda.map((item) => item.id); const index = ids.indexOf(button.dataset.item); const target = button.dataset.moveAgenda === "up" ? index - 1 : index + 1;
+    if (index < 0 || target < 0 || target >= ids.length) return;
+    [ids[index], ids[target]] = [ids[target], ids[index]]; button.disabled = true;
+    try { await service.reorderAgendaItems(meeting.id, ids); data = await service.getSnapshot(); openMeetingDetail(meeting.id); }
+    catch (error) { console.error(error); showToast("No hemos podido cambiar el orden."); button.disabled = false; }
+  }));
+  dialog.querySelector("#meeting-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault(); const formElement = event.currentTarget; const values = new FormData(formElement); const payload = { id: values.get("id") || undefined, date: values.get("date"), time: values.get("time"), place: String(values.get("place")).trim(), status: values.get("status") || "PLANIFICADA", notes: String(values.get("notes") ?? "").trim() }; const submit = formElement.querySelector("button[type='submit']"); const error = formElement.querySelector(".form-error"); submit.disabled = true; submit.textContent = "Guardando…";
+    try { if (payload.id) await service.updateMeeting(payload); else await service.createMeeting(payload); data = await service.getSnapshot(); dialog.close(); renderRoute(); showToast(payload.id ? "Reunión actualizada." : "Reunión creada."); }
+    catch (saveError) { console.error(saveError); error.textContent = "No hemos podido guardar la reunión."; error.hidden = false; submit.disabled = false; submit.textContent = payload.id ? "Guardar cambios" : "Crear reunión"; }
+  });
+  dialog.querySelector("#agenda-item-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault(); const formElement = event.currentTarget; const values = new FormData(formElement); const payload = { id: values.get("id") || undefined, meetingId: values.get("meetingId"), title: String(values.get("title")).trim(), description: String(values.get("description") ?? "").trim(), proposalId: values.get("proposalId") || null, notes: String(values.get("notes") ?? "").trim() }; const submit = formElement.querySelector("button[type='submit']"); const error = formElement.querySelector(".form-error"); submit.disabled = true; submit.textContent = "Guardando…";
+    try { if (payload.id) await service.updateAgendaItem(payload); else await service.createAgendaItem(payload); data = await service.getSnapshot(); openMeetingDetail(payload.meetingId); showToast(payload.id ? "Punto actualizado." : "Punto añadido."); }
+    catch (saveError) { console.error(saveError); error.textContent = "No hemos podido guardar el punto."; error.hidden = false; submit.disabled = false; submit.textContent = "Guardar punto"; }
   });
 
   dialog.querySelector("[data-edit-proposal]")?.addEventListener("click", (event) => {
@@ -1321,6 +1386,8 @@ function bindInteractions() {
   document.querySelector("[data-open-bank-rules]")?.addEventListener("click", openBankRulesDialog);
   document.querySelector("[data-open-proposal]")?.addEventListener("click", () => openProposalForm());
   document.querySelectorAll("[data-proposal-id]").forEach((button) => button.addEventListener("click", () => openProposalDetail(button.dataset.proposalId)));
+  document.querySelector("[data-open-meeting]")?.addEventListener("click", () => openMeetingForm());
+  document.querySelectorAll("[data-meeting-id]").forEach((button) => button.addEventListener("click", () => openMeetingDetail(button.dataset.meetingId)));
   document.querySelector("[data-open-expense]")?.addEventListener("click", openExpenseDialog);
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
   document.querySelectorAll("[data-edit-expense]").forEach((button) => button.addEventListener("click", () => openExpenseDialog(button.dataset.editExpense)));

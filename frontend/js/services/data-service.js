@@ -13,6 +13,11 @@ export class DemoDataService {
     return clone(this.data);
   }
 
+  refreshNextMeeting() {
+    const next = [...(this.data.meetings ?? [])].filter((meeting) => meeting.status === "PLANIFICADA" && meeting.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))[0];
+    this.data.community.nextMeeting = next ? { day: Number(next.date.slice(8, 10)), month: new Intl.DateTimeFormat("es-ES", { month: "long" }).format(new Date(`${next.date}T12:00:00`)), time: next.time, place: next.place } : { day: "—", month: "Sin fecha", time: "", place: "Por concretar" };
+  }
+
   async createFamily(family) {
     await delay(240);
     const created = { ...clone(family), id: `fam_demo_${crypto.randomUUID()}`, active: true, contributedCents: 0 };
@@ -122,6 +127,61 @@ export class DemoDataService {
     if (index >= 0) votes[index] = saved; else votes.push(saved);
     proposal.voting.votes = votes;
     return clone(saved);
+  }
+
+  async createMeeting(meeting) {
+    await delay(220);
+    const created = { ...clone(meeting), id: `reu_demo_${crypto.randomUUID()}`, status: "PLANIFICADA", agenda: [] };
+    this.data.meetings = [created, ...(this.data.meetings ?? [])]; this.refreshNextMeeting(); return clone(created);
+  }
+
+  async updateMeeting(meeting) {
+    await delay(220);
+    const index = (this.data.meetings ?? []).findIndex((item) => item.id === meeting.id);
+    if (index < 0) throw new Error("La reunión no existe.");
+    this.data.meetings[index] = { ...this.data.meetings[index], ...clone(meeting) }; this.refreshNextMeeting(); return clone(this.data.meetings[index]);
+  }
+
+  async deleteMeeting(id) {
+    await delay(180);
+    const before = (this.data.meetings ?? []).length; this.data.meetings = (this.data.meetings ?? []).filter((item) => item.id !== id);
+    if (this.data.meetings.length === before) throw new Error("La reunión no existe.");
+    this.refreshNextMeeting(); return true;
+  }
+
+  async createAgendaItem(item) {
+    await delay(180);
+    const meeting = (this.data.meetings ?? []).find((value) => value.id === item.meetingId);
+    if (!meeting) throw new Error("La reunión no existe.");
+    const created = { ...clone(item), id: `ord_demo_${crypto.randomUUID()}`, position: (meeting.agenda?.length ?? 0) + 1, proposalTitle: (this.data.proposals ?? []).find((proposal) => proposal.id === item.proposalId)?.title ?? null };
+    meeting.agenda = [...(meeting.agenda ?? []), created]; return clone(created);
+  }
+
+  async updateAgendaItem(item) {
+    await delay(180);
+    for (const meeting of this.data.meetings ?? []) {
+      const index = (meeting.agenda ?? []).findIndex((value) => value.id === item.id);
+      if (index >= 0) { meeting.agenda[index] = { ...meeting.agenda[index], ...clone(item), proposalTitle: (this.data.proposals ?? []).find((proposal) => proposal.id === item.proposalId)?.title ?? null }; return clone(meeting.agenda[index]); }
+    }
+    throw new Error("El punto no existe.");
+  }
+
+  async deleteAgendaItem(id) {
+    await delay(150);
+    for (const meeting of this.data.meetings ?? []) {
+      const filtered = (meeting.agenda ?? []).filter((item) => item.id !== id);
+      if (filtered.length !== (meeting.agenda ?? []).length) { meeting.agenda = filtered.map((item, index) => ({ ...item, position: index + 1 })); return true; }
+    }
+    throw new Error("El punto no existe.");
+  }
+
+  async reorderAgendaItems(meetingId, itemIds) {
+    await delay(140);
+    const meeting = (this.data.meetings ?? []).find((item) => item.id === meetingId);
+    if (!meeting || itemIds.length !== (meeting.agenda ?? []).length || new Set(itemIds).size !== itemIds.length) throw new Error("El orden no es válido.");
+    const byId = new Map(meeting.agenda.map((item) => [item.id, item]));
+    if (itemIds.some((id) => !byId.has(id))) throw new Error("El orden no es válido.");
+    meeting.agenda = itemIds.map((id, index) => ({ ...byId.get(id), position: index + 1 })); return true;
   }
 
   async updateAssessment(assessment) {
@@ -327,8 +387,10 @@ export class SupabaseDataService {
   }
 
   async getSnapshot() {
-    const [snapshot, proposals] = await Promise.all([this.rpc("get_community_snapshot"), this.rpc("list_proposals")]);
-    return { ...snapshot, proposals };
+    const [snapshot, proposals, meetings] = await Promise.all([this.rpc("get_community_snapshot"), this.rpc("list_proposals"), this.rpc("list_meetings")]);
+    const next = [...meetings].filter((meeting) => meeting.status === "PLANIFICADA" && meeting.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))[0];
+    const nextMeeting = next ? { day: Number(next.date.slice(8, 10)), month: new Intl.DateTimeFormat("es-ES", { month: "long" }).format(new Date(`${next.date}T12:00:00`)), time: next.time, place: next.place } : { day: "—", month: "Sin fecha", time: "", place: "Por concretar" };
+    return { ...snapshot, community: { ...snapshot.community, nextMeeting }, proposals, meetings };
   }
 
   createFamily(family) {
@@ -505,6 +567,14 @@ export class SupabaseDataService {
   setProposalVotingStatus(proposalId, status) { return this.rpc("set_proposal_voting_status", { p_proposal_id: proposalId, p_status: status }); }
 
   castProposalVote(proposalId, familyId, vote) { return this.rpc("cast_proposal_vote", { p_proposal_id: proposalId, p_family_id: familyId, p_vote: vote }); }
+
+  createMeeting(meeting) { return this.rpc("create_meeting", { p_date: meeting.date, p_time: meeting.time, p_place: meeting.place, p_notes: meeting.notes ?? "" }); }
+  updateMeeting(meeting) { return this.rpc("update_meeting", { p_id: meeting.id, p_date: meeting.date, p_time: meeting.time, p_place: meeting.place, p_status: meeting.status, p_notes: meeting.notes ?? "" }); }
+  deleteMeeting(id) { return this.rpc("delete_meeting", { p_id: id }); }
+  createAgendaItem(item) { return this.rpc("create_agenda_item", { p_meeting_id: item.meetingId, p_title: item.title, p_description: item.description ?? "", p_proposal_id: item.proposalId || null, p_notes: item.notes ?? "" }); }
+  updateAgendaItem(item) { return this.rpc("update_agenda_item", { p_id: item.id, p_title: item.title, p_description: item.description ?? "", p_proposal_id: item.proposalId || null, p_notes: item.notes ?? "" }); }
+  deleteAgendaItem(id) { return this.rpc("delete_agenda_item", { p_id: id }); }
+  reorderAgendaItems(meetingId, itemIds) { return this.rpc("reorder_agenda_items", { p_meeting_id: meetingId, p_item_ids: itemIds }); }
 }
 
 export function createDataService(config = globalThis.APP_CONFIG) {

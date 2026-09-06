@@ -273,11 +273,11 @@ Implementadas mediante dos tablas. `votaciones`: `id`, `proposal_id` único, `st
 
 ### REUNIONES
 
-`id`, `fecha`, `hora`, `lugar`, `estado`, `notas`, `creada_en`, `actualizada_en`.
+Implementada como `reuniones`: `id`, `meeting_date`, `start_time`, `place`, `status` (`PLANIFICADA`/`CELEBRADA`/`CANCELADA`), `notes`, autoría y fechas. La próxima reunión del Dashboard se obtiene de la primera reunión planificada futura.
 
 ### ORDEN_DIA
 
-`id`, `reunion_id`, `orden`, `titulo`, `descripcion`, `propuesta_id`, `notas`.
+Implementada como `orden_dia`: `id`, `meeting_id`, `position`, `title`, `description`, `proposal_id`, `notes`, autoría y fechas. La posición es única dentro de la reunión y el orden completo se actualiza atómicamente.
 
 ### ACTAS
 

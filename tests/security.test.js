@@ -14,6 +14,7 @@ const accountsMigrationUrl = new URL("../supabase/migrations/006_family_accounts
 const quotaReferenceMigrationUrl = new URL("../supabase/migrations/026_quota_as_contribution_reference.sql", import.meta.url);
 const proposalsMigrationUrl = new URL("../supabase/migrations/027_proposals_and_budgets.sql", import.meta.url);
 const votingMigrationUrl = new URL("../supabase/migrations/028_proposal_voting.sql", import.meta.url);
+const meetingsMigrationUrl = new URL("../supabase/migrations/029_meetings_and_agenda.sql", import.meta.url);
 const edgeFunctionUrl = new URL("../supabase/functions/unlock-access/index.ts", import.meta.url);
 
 test("la API anónima permanece cerrada", async () => {
@@ -171,4 +172,16 @@ test("las votaciones exigen familia explícita, sesión activa y cierre administ
   assert.match(sql.match(/function public\.cast_proposal_vote[\s\S]*?\$\$;/i)?.[0] ?? "", /current_user_is_active/);
   assert.match(sql.match(/function public\.set_proposal_voting_status[\s\S]*?\$\$;/i)?.[0] ?? "", /current_user_is_admin/);
   assert.match(sql, /audit_votos_changes/i);
+});
+
+test("reuniones y orden del día son consultables pero solo administrables mediante RPC", async () => {
+  const sql = await readFile(meetingsMigrationUrl, "utf8");
+  assert.match(sql, /alter table public\.reuniones enable row level security/i);
+  assert.match(sql, /revoke all on table public\.reuniones, public\.orden_dia from anon, authenticated/i);
+  assert.match(sql.match(/function public\.list_meetings[\s\S]*?\$\$;/i)?.[0] ?? "", /current_user_is_active/);
+  for (const name of ["create_meeting", "update_meeting", "delete_meeting", "create_agenda_item", "reorder_agenda_items"]) {
+    assert.match(sql.match(new RegExp(`function public\\.${name}[\\s\\S]*?\\$\\$;`, "i"))?.[0] ?? "", /current_user_is_admin/);
+  }
+  assert.match(sql, /unique \(meeting_id, position\) deferrable initially deferred/i);
+  assert.match(sql, /audit_orden_dia_changes/i);
 });

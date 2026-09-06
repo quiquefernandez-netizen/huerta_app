@@ -56,6 +56,15 @@ export const demoData = Object.freeze({
     ] },
     { id: "prop_demo_2", title: "Zona común con más sombra", description: "Estudiar una solución sencilla de sombra para los meses de verano.", date: "2026-09-01", estimatedBudgetCents: null, status: "IDEA", notes: "", voting: null, budgets: [] }
   ],
+  meetings: [
+    { id: "reu_demo_1", date: "2026-10-18", time: "18:30", place: "Zona común", status: "PLANIFICADA", notes: "", agenda: [
+      { id: "ord_demo_1", position: 1, title: "Estado de las cuentas", description: "Resumen de aportaciones, gastos y banco.", proposalId: null, proposalTitle: null, notes: "" },
+      { id: "ord_demo_2", position: 2, title: "Iluminación de la entrada", description: "Revisar los presupuestos recibidos.", proposalId: "prop_demo_1", proposalTitle: "Mejorar la iluminación de la entrada", notes: "" }
+    ] },
+    { id: "reu_demo_2", date: "2026-07-12", time: "19:00", place: "Zona común", status: "CELEBRADA", notes: "Reunión ficticia de muestra.", agenda: [
+      { id: "ord_demo_3", position: 1, title: "Consumo de agua", description: "Revisión del consumo del semestre.", proposalId: null, proposalTitle: null, notes: "" }
+    ] }
+  ],
   expenseCategories: [
     { name: "Agua general", amountCents: 46000, color: "#3f7f8b" },
     { name: "Electricidad", amountCents: 78000, color: "#d69c45" },

@@ -62,6 +62,18 @@ test("Propuestas está disponible con varios presupuestos y formularios responsi
   assert.match(styles, /\.vote-summary/);
 });
 
+test("Reuniones está disponible con orden del día editable y responsive", async () => {
+  const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
+  assert.match(source, /id: "reuniones"[^\n]+enabled: true/);
+  assert.match(source, /function renderMeetings/);
+  assert.match(source, /id="meeting-form"/);
+  assert.match(source, /id="agenda-item-form"/);
+  assert.match(source, /data-move-agenda="up"/);
+  assert.match(styles, /\.meeting-card/);
+  assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?\.agenda-list > li/);
+});
+
 test("la interfaz deja al perfil normal registrar y reserva la administración", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
   assert.match(source, /route\.id !== "administracion" \|\| isAdministrator\(\)/);
