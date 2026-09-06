@@ -91,7 +91,7 @@ test("una derrama se reparte exactamente aunque sobren céntimos", () => {
   assert.throws(() => splitCentsEvenly(100, []), /familia/);
 });
 
-test("la cuota clasifica la aportación sin restarla del saldo familiar", () => {
+test("la cuenta familiar compensa aportaciones y adelantos con todos los cargos", () => {
   const account = calculateFamilyAccount({
     familyId: "fam_a",
     expectedQuotaCents: 18000,
@@ -104,15 +104,32 @@ test("la cuota clasifica la aportación sin restarla del saldo familiar", () => 
   assert.equal(account.quotaCoveredCents, 18000);
   assert.equal(account.extraContributionsCents, 12000);
   assert.equal(account.quotaPendingCents, 0);
-  assert.equal(account.chargesCents, 9000);
-  assert.equal(account.balanceCents, 23000);
+  assert.equal(account.chargesCents, 27000);
+  assert.equal(account.balanceCents, 5000);
+  assert.equal(account.availableCents, 5000);
+  assert.equal(account.pendingCents, 0);
 });
 
-test("una aportación parcial conserva todo su valor y muestra la cuota por completar", () => {
+test("una aportación parcial conserva todo su valor y deja un saldo pendiente", () => {
   const account = calculateFamilyAccount({ familyId: "fam_a", expectedQuotaCents: 18000, contributions: [{ familyId: "fam_a", amountCents: 10000 }] });
   assert.equal(account.contributionsCents, 10000);
   assert.equal(account.quotaCoveredCents, 10000);
   assert.equal(account.extraContributionsCents, 0);
   assert.equal(account.quotaPendingCents, 8000);
-  assert.equal(account.balanceCents, 10000);
+  assert.equal(account.balanceCents, -8000);
+  assert.equal(account.availableCents, 0);
+  assert.equal(account.pendingCents, 8000);
+});
+
+test("el agua consume primero el saldo a favor y después aumenta lo pendiente", () => {
+  const account = calculateFamilyAccount({
+    familyId: "fam_a",
+    expectedQuotaCents: 2000,
+    contributions: [{ familyId: "fam_a", amountCents: 3000 }],
+    waterSettlements: [{ items: [{ familyId: "fam_a", amountCents: 1500 }] }]
+  });
+  assert.equal(account.creditsCents, 3000);
+  assert.equal(account.chargesCents, 3500);
+  assert.equal(account.balanceCents, -500);
+  assert.equal(account.pendingCents, 500);
 });

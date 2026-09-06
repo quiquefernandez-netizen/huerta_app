@@ -11,7 +11,7 @@ const waterCorrectionMigrationUrl = new URL("../supabase/migrations/014_safe_wat
 const auditMigrationUrl = new URL("../supabase/migrations/004_phase1_audit.sql", import.meta.url);
 const quotaMigrationUrl = new URL("../supabase/migrations/005_quota_and_water_settlement_batches.sql", import.meta.url);
 const accountsMigrationUrl = new URL("../supabase/migrations/006_family_accounts_expenses_and_assessments.sql", import.meta.url);
-const quotaReferenceMigrationUrl = new URL("../supabase/migrations/026_quota_as_contribution_reference.sql", import.meta.url);
+const quotaChargeMigrationUrl = new URL("../supabase/migrations/031_quota_as_family_charge.sql", import.meta.url);
 const proposalsMigrationUrl = new URL("../supabase/migrations/027_proposals_and_budgets.sql", import.meta.url);
 const votingMigrationUrl = new URL("../supabase/migrations/028_proposal_voting.sql", import.meta.url);
 const meetingsMigrationUrl = new URL("../supabase/migrations/029_meetings_and_agenda.sql", import.meta.url);
@@ -147,12 +147,15 @@ test("el modelo incluye cuotas configurables, lotes de agua, pagadores y derrama
   assert.match(accountsSql, /create or replace view public\.movimientos_cuenta_familia/i);
 });
 
-test("la cuota es una referencia y no un cargo en la cuenta familiar", async () => {
-  const sql = await readFile(quotaReferenceMigrationUrl, "utf8");
+test("la cuota vencida forma parte de los cargos de la cuenta familiar", async () => {
+  const sql = await readFile(quotaChargeMigrationUrl, "utf8");
   assert.match(sql, /create or replace view public\.movimientos_cuenta_familia/i);
-  assert.doesNotMatch(sql, /from public\.cuotas/i);
+  assert.match(sql, /from public\.cuotas/i);
+  assert.match(sql, /'CUOTA'[\s\S]*?-fee\.amount_cents/i);
+  assert.match(sql, /fee\.period_start <= current_date/i);
   assert.match(sql, /'AGUA'[\s\S]*-'?[^\n]*amount_cents/i);
   assert.match(sql, /'DERRAMA'[\s\S]*-'?[^\n]*amount_cents/i);
+  assert.match(sql, /'GASTO_ADELANTADO'[\s\S]*?payer\.amount_cents/i);
 });
 
 test("propuestas y presupuestos se protegen mediante RPC y reservan el borrado al administrador", async () => {

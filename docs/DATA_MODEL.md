@@ -317,10 +317,10 @@ PROPUESTAS ─< PRESUPUESTOS
 No se guarda un saldo editable. Se calcula siempre desde los documentos de origen:
 
 ```text
-saldo = aportaciones + gastos adelantados − agua liquidada − derramas
+saldo = aportaciones + gastos adelantados − cuotas acumuladas − agua liquidada − derramas
 ```
 
-La cuota configurada se usa como referencia: `aplicado_a_cuota = min(aportaciones, cuota_prevista)` y `aportacion_extra = max(0, aportaciones − cuota_prevista)`. No genera una resta en la cuenta familiar. Un saldo positivo queda disponible para futuras liquidaciones; uno negativo refleja cargos liquidados pendientes. Corregir un histórico requiere anular o ajustar el documento origen, nunca sobrescribir el saldo.
+La cuota configurada genera un cargo mensual por familia y ejercicio. La interfaz conserva además el desglose informativo `aportacion_para_cuota = min(aportaciones, cuota_acumulada)` y `aportacion_adicional = max(0, aportaciones − cuota_acumulada)` para dar protagonismo al dinero aportado sin ocultar la obligación mínima. Un saldo positivo queda disponible para futuras cuotas, liquidaciones de agua y derramas; si los cargos superan los abonos, el saldo negativo se presenta como «Pendiente de aportar». Corregir un histórico requiere anular o ajustar el documento origen, nunca sobrescribir el saldo.
 
 ## Validaciones críticas de PostgreSQL y servicios
 

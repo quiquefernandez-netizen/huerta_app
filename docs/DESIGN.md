@@ -84,7 +84,9 @@ Medidas de revisión: 360 × 800, 390 × 844, 768 × 1024, 1280 × 800 y 1440 ×
 
 ## Saldos, cuotas, aportaciones y agua
 
-Familias da protagonismo al total aportado y lo separa en «aplicado a cuota» y «aportación extra». La cuota se presenta como referencia, nunca como una resta ficticia. La ficha conserva los movimientos reales de aportaciones, agua, derramas y adelantos con fecha, concepto y signo. Administración puede cambiar la cuota del ejercicio y ve de inmediato el equivalente anual.
+Familias da protagonismo al total aportado y lo separa en «aportación para cuota» y «aportación adicional». En lugar de señalar impagos, muestra una cuenta sencilla: «Saldo a favor», «Saldo equilibrado» o «Pendiente de aportar». El saldo incluye cuotas acumuladas, agua, derramas, aportaciones y gastos adelantados; la ficha conserva cada movimiento con fecha, concepto y signo.
+
+En escritorio, las cinco tarjetas principales de Inicio forman una única fila compacta. Administración se presenta como un centro de control con tres áreas reconocibles —comunidad, banco y accesos— y muestra los valores vigentes junto a cada acción, evitando botones aislados sin contexto.
 
 Agua presenta el consumo acumulado desde la última liquidación. «Liquidar agua» abre primero un resumen por familia con lectura anterior, lectura actual, consumo e importe. La confirmación crea cargos familiares que se compensan con cualquier saldo a favor.
 

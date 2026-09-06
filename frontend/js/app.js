@@ -62,11 +62,9 @@ function familyAccount(familyId) {
 }
 
 function familyAccountStatus(account) {
-  if (!account.quotaChargesCents) return { key: "paid", label: "Sin cuota configurada" };
-  if (account.extraContributionsCents > 0) return { key: "exceeded", label: "Cuota cubierta + extra" };
-  if (!account.quotaPendingCents) return { key: "paid", label: "Cuota cubierta" };
-  if (account.contributionsCents > 0) return { key: "partial", label: "Cuota parcial" };
-  return { key: "pending", label: "Sin aportación" };
+  if (account.balanceCents > 0) return { key: "exceeded", label: "Saldo a favor" };
+  if (account.balanceCents < 0) return { key: "partial", label: "Pendiente de aportar" };
+  return { key: "paid", label: account.chargesCents ? "Saldo equilibrado" : "Sin cargos" };
 }
 
 function contributionsForFamily(familyId) {
@@ -75,6 +73,13 @@ function contributionsForFamily(familyId) {
 
 function familyLedgerEntries(familyId) {
   const entries = [];
+  const family = data.families.find((item) => item.id === familyId);
+  const plan = activeQuotaPlan();
+  const monthNames = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  for (let month = 1; month <= plan.dueThroughMonth; month += 1) {
+    const date = `${plan.year}-${String(month).padStart(2, "0")}-01`;
+    if (plan.monthlyAmountCents > 0 && (!family?.joinedAt || date >= `${family.joinedAt.slice(0, 7)}-01`)) entries.push({ id: `quota_${familyId}_${plan.year}_${month}`, date, concept: `Cuota de ${monthNames[month - 1]}`, type: "Cuota mensual", amountCents: -plan.monthlyAmountCents });
+  }
   contributionsForFamily(familyId).forEach((item) => entries.push({ id: item.id, date: item.date, concept: item.concept, type: "Aportación", amountCents: item.amountCents }));
   (data.expenses ?? []).forEach((expense) => (expense.payers ?? []).filter((payer) => payer.familyId === familyId).forEach((payer) => entries.push({ id: `${expense.id}_${familyId}`, date: expense.date, concept: `Adelanto: ${expense.concept}`, type: "Saldo a favor", amountCents: payer.amountCents })));
   (data.waterSettlements ?? []).forEach((settlement) => (settlement.items ?? []).filter((item) => item.familyId === familyId).forEach((item) => entries.push({ id: `${settlement.id}_${familyId}`, date: settlement.periodEnd, concept: "Liquidación de agua", type: "Cargo", amountCents: -item.amountCents })));
@@ -121,7 +126,7 @@ function renderNavigation(activeRoute) {
 function renderDashboard() {
   const activeFamilies = data.families.filter((family) => family.active);
   const plan = activeQuotaPlan();
-  const upToDate = activeFamilies.filter((family) => familyAccount(family.id).quotaPendingCents === 0).length;
+  const upToDate = activeFamilies.filter((family) => familyAccount(family.id).balanceCents >= 0).length;
   const activeFamilyCount = data.community.activeFamilyCount ?? activeFamilies.length;
   const maxMonthlyExpense = Math.max(1, ...data.monthlyExpensesCents);
   const categoryTotal = sumCents(data.expenseCategories, (category) => category.amountCents);
@@ -143,7 +148,7 @@ function renderDashboard() {
     <section class="summary-grid" aria-label="Resumen de la comunidad">
       <article class="summary-card summary-card--balance"><span class="summary-card__icon">${icon("trend")}</span><div><p>Saldo actual</p><strong>${formatMoney(data.community.currentBalanceCents)}</strong><small>${formatMoney(yearlyDifferenceCents)} este año</small></div></article>
       <article class="summary-card"><span class="summary-card__icon summary-card__icon--sun">${icon("receipt")}</span><div><p>Gastos del año</p><strong>${formatMoney(data.community.yearlyExpensesCents)}</strong><small>${formatMoney(data.community.yearlyIncomeCents)} ingresados</small></div></article>
-      <article class="summary-card"><span class="summary-card__icon summary-card__icon--blue">${icon("people")}</span><div><p>Cuota mensual</p><strong>${formatMoney(plan.monthlyAmountCents)}</strong><small>${upToDate} de ${activeFamilyCount} familias al día</small></div></article>
+      <article class="summary-card"><span class="summary-card__icon summary-card__icon--blue">${icon("people")}</span><div><p>Cuota mensual</p><strong>${formatMoney(plan.monthlyAmountCents)}</strong><small>${upToDate} de ${activeFamilyCount} con saldo cubierto</small></div></article>
       <article class="summary-card"><span class="summary-card__icon summary-card__icon--clay">${icon("calendar")}</span><div><p>Próxima reunión</p><strong>${escapeHtml(data.community.nextMeeting.day)} ${escapeHtml(data.community.nextMeeting.month)}</strong><small>${escapeHtml(data.community.nextMeeting.time)} · ${escapeHtml(data.community.nextMeeting.place)}</small></div></article>
       <a class="summary-card" href="#banco"><span class="summary-card__icon summary-card__icon--blue">${icon("bank")}</span><div><p>Banco</p><strong>${bankBalanceCents === null ? "—" : formatMoney(bankBalanceCents)}</strong><small>${latestBankMovement ? `Saldo a ${formatDate(latestBankMovement.date)}` : "Sin extractos importados"}</small></div></a>
     </section>
@@ -169,7 +174,7 @@ function renderDashboard() {
       </article>
       <article class="panel attention-card">
         <span class="attention-card__badge">${pendingFamilies}</span>
-        <div><p class="section-kicker">${pendingFamilies ? "Cuota por completar" : "Cuotas cubiertas"}</p><h3>${pendingFamilies ? `${pendingFamilies} ${pendingFamilies === 1 ? "familia aún no cubre" : "familias aún no cubren"} la cuota prevista` : "Todas las familias cubren la cuota prevista"}</h3><p>La cuota es una referencia; no se resta de las aportaciones.</p></div>
+        <div><p class="section-kicker">${pendingFamilies ? "Aportación pendiente" : "Saldos cubiertos"}</p><h3>${pendingFamilies ? `${pendingFamilies} ${pendingFamilies === 1 ? "familia tiene" : "familias tienen"} saldo pendiente` : "Todas las familias tienen el saldo cubierto"}</h3><p>El saldo reúne cuotas, agua, derramas, aportaciones y gastos adelantados.</p></div>
         <a class="text-link" href="#familias">Revisar ${icon("arrow")}</a>
       </article>
     </section>`;
@@ -195,14 +200,14 @@ function renderFamilies() {
   const totalContributedCents = sumCents([...accounts.values()], (account) => account.contributionsCents);
   const totalQuotaCoveredCents = sumCents([...accounts.values()], (account) => account.quotaCoveredCents);
   const totalExtraCents = sumCents([...accounts.values()], (account) => account.extraContributionsCents);
-  const totalSettledChargesCents = sumCents([...accounts.values()], (account) => account.waterChargesCents + account.assessmentChargesCents);
+  const totalBalanceCents = sumCents([...accounts.values()], (account) => account.balanceCents);
 
   return `
     <section class="inline-summary" aria-label="Resumen de aportaciones">
       <div><span>Total aportado</span><strong>${formatMoney(totalContributedCents)}</strong></div>
-      <div><span>Aplicado a cuota</span><strong>${formatMoney(totalQuotaCoveredCents)}</strong></div>
-      <div><span>Aportación extra</span><strong>${formatMoney(totalExtraCents)}</strong></div>
-      <div><span>Agua y derramas</span><strong>${formatMoney(totalSettledChargesCents)}</strong></div>
+      <div><span>Aportación para cuota</span><strong>${formatMoney(totalQuotaCoveredCents)}</strong></div>
+      <div><span>Aportación adicional</span><strong>${formatMoney(totalExtraCents)}</strong></div>
+      <div><span>Saldo conjunto</span><strong>${formatMoney(totalBalanceCents)}</strong></div>
     </section>
     <section class="family-grid" aria-label="Listado de familias">
       ${activeFamilies.map((family, index) => {
@@ -217,8 +222,9 @@ function renderFamilies() {
           <div class="family-card__body">
             <span class="status-pill status-pill--${status.key}">${status.label}</span>
             <div class="money-pair money-pair--balance"><span>Total aportado</span><strong>${formatMoney(account.contributionsCents)}</strong></div>
-            <div class="family-card__account"><span><small>Para cuota</small><strong>${formatMoney(account.quotaCoveredCents)}</strong></span><span><small>Extra aportado</small><strong>${formatMoney(account.extraContributionsCents)}</strong></span></div>
-            <div class="family-card__foot"><span>Cuota prevista ${formatMoney(account.quotaChargesCents)}</span><span>${account.chargesCents ? `Liquidaciones ${formatMoney(account.chargesCents)}` : "Sin liquidaciones"}</span></div>
+            <div class="family-card__account"><span><small>Aportación para cuota</small><strong>${formatMoney(account.quotaCoveredCents)}</strong></span><span><small>Aportación adicional</small><strong>${formatMoney(account.extraContributionsCents)}</strong></span></div>
+            <div class="family-balance family-balance--${account.balanceCents < 0 ? "negative" : account.balanceCents > 0 ? "positive" : "neutral"}"><span>${account.balanceCents < 0 ? "Pendiente de aportar" : account.balanceCents > 0 ? "Saldo a favor" : "Saldo equilibrado"}</span><strong>${formatMoney(Math.abs(account.balanceCents))}</strong></div>
+            <div class="family-card__foot"><span>Cargos ${formatMoney(account.chargesCents)}</span><span>Cuota · agua · derramas</span></div>
           </div>
         </article>`;
       }).join("")}
@@ -591,7 +597,35 @@ async function parseBankFile(file) {
 }
 
 function renderAdministration() {
-  return `<section class="admin-grid"><article class="panel"><p class="section-kicker">Configuración</p><h2>Cuotas y agua</h2><p>Configura importes nuevos sin modificar las liquidaciones ya emitidas.</p><div class="page-actions"><button class="secondary-button" type="button" data-open-quota>${icon("coins")} Cuota anual</button><button class="secondary-button" type="button" data-open-water-tariff>${icon("water")} Tarifa de agua</button></div></article><article class="panel"><p class="section-kicker">Banco</p><h2>Reglas de conciliación</h2><p>Los conceptos repetidos se configuran aquí una sola vez para proponer su asignación automáticamente.</p><button class="secondary-button" type="button" data-open-bank-rules>${icon("settings")} Gestionar reglas${bankRules.length ? ` · ${bankRules.length}` : ""}</button></article><article class="panel"><p class="section-kicker">Accesos</p><h2>Credenciales</h2><p>La gestión de contraseñas administrativas se añadirá mediante una pantalla segura de servidor. Nunca se mostrarán ni guardarán en el navegador.</p></article></section>`;
+  const plan = activeQuotaPlan();
+  const tariff = currentWaterTariff();
+  return `<section class="admin-overview panel">
+    <span class="admin-overview__icon">${icon("settings")}</span>
+    <div><p class="section-kicker">Administración</p><h2>Centro de control</h2><p>Ajusta las reglas generales desde un único lugar. Los cambios económicos conservan el histórico de cada ejercicio.</p></div>
+    <span class="admin-overview__badge">Solo administración</span>
+  </section>
+  <section class="admin-grid" aria-label="Opciones de administración">
+    <article class="admin-card panel">
+      <header class="admin-card__header"><span class="admin-card__icon">${icon("coins")}</span><div><p class="section-kicker">Comunidad</p><h2>Cuotas y agua</h2></div></header>
+      <p>Importes vigentes para calcular los cargos de las familias.</p>
+      <div class="admin-card__actions">
+        <button class="admin-action" type="button" data-open-quota><span>${icon("coins")}</span><span><strong>Cuota mensual</strong><small>${formatMoney(plan.monthlyAmountCents)} · ejercicio ${plan.year}</small></span>${icon("arrow")}</button>
+        <button class="admin-action" type="button" data-open-water-tariff><span>${icon("water")}</span><span><strong>Tarifa de agua</strong><small>${formatMoney(tariff.priceCentsPerM3)} por m³</small></span>${icon("arrow")}</button>
+      </div>
+    </article>
+    <article class="admin-card panel">
+      <header class="admin-card__header"><span class="admin-card__icon admin-card__icon--bank">${icon("bank")}</span><div><p class="section-kicker">Banco</p><h2>Conciliación</h2></div></header>
+      <p>Decide cómo se asignan automáticamente los conceptos que se repiten.</p>
+      <div class="admin-card__actions">
+        <button class="admin-action" type="button" data-open-bank-rules><span>${icon("settings")}</span><span><strong>Reglas automáticas</strong><small>${bankRules.length ? `${bankRules.length} reglas configuradas` : "Todavía no hay reglas"}</small></span>${icon("arrow")}</button>
+      </div>
+    </article>
+    <article class="admin-card panel">
+      <header class="admin-card__header"><span class="admin-card__icon admin-card__icon--access">${icon("people")}</span><div><p class="section-kicker">Accesos</p><h2>Credenciales</h2></div></header>
+      <p>Acceso normal compartido y credenciales administrativas revocables por separado.</p>
+      <div class="admin-card__status"><span class="status-dot"></span><div><strong>Gestión segura preparada</strong><small>Las contraseñas se validan en Supabase y nunca se guardan en este navegador.</small></div></div>
+    </article>
+  </section>`;
 }
 
 function renderTopbar(route) {
@@ -715,7 +749,7 @@ function openFamilyDialog(familyId) {
   openDialog(`${dialogHeader("Ficha de familia", escapeHtml(family.name))}
     <div class="dialog-family-summary">
       <div class="detail-highlight"><span class="family-avatar">${escapeHtml(familyMonogram(family))}</span><div><strong>Total aportado: ${formatMoney(account.contributionsCents)}</strong><span>${status.label} · ${family.members} miembros</span></div></div>
-      <div class="detail-grid"><div><span>Aplicado a cuota</span><strong>${formatMoney(account.quotaCoveredCents)}</strong></div><div><span>Aportación extra</span><strong>${formatMoney(account.extraContributionsCents)}</strong></div><div><span>Cuota prevista a fecha</span><strong>${formatMoney(account.quotaChargesCents)}</strong></div><div><span>${account.balanceCents < 0 ? "Pendiente tras liquidaciones" : "Disponible tras liquidaciones"}</span><strong>${formatMoney(Math.abs(account.balanceCents))}</strong></div><div><span>Agua liquidada</span><strong>${formatMoney(account.waterChargesCents)}</strong></div><div><span>Derramas</span><strong>${formatMoney(account.assessmentChargesCents)}</strong></div><div><span>Gastos adelantados</span><strong>${formatMoney(account.advanceCreditsCents)}</strong></div><div><span>Última lectura</span><strong>${water ? `${formatDecimal(water.readingM3)} m³` : "Sin lectura"}</strong></div></div>
+      <div class="detail-grid"><div><span>Aportación para cuota</span><strong>${formatMoney(account.quotaCoveredCents)}</strong></div><div><span>Aportación adicional</span><strong>${formatMoney(account.extraContributionsCents)}</strong></div><div><span>Cuotas acumuladas</span><strong>${formatMoney(account.quotaChargesCents)}</strong></div><div><span>Agua liquidada</span><strong>${formatMoney(account.waterChargesCents)}</strong></div><div><span>Derramas</span><strong>${formatMoney(account.assessmentChargesCents)}</strong></div><div><span>Gastos adelantados</span><strong>${formatMoney(account.advanceCreditsCents)}</strong></div><div class="detail-grid__balance"><span>${account.balanceCents < 0 ? "Pendiente de aportar" : account.balanceCents > 0 ? "Saldo a favor" : "Saldo equilibrado"}</span><strong>${formatMoney(Math.abs(account.balanceCents))}</strong></div><div><span>Última lectura</span><strong>${water ? `${formatDecimal(water.readingM3)} m³` : "Sin lectura"}</strong></div></div>
       <div class="dialog-section-heading"><div><span>Cuenta ${plan.year}</span><strong>Últimos movimientos</strong></div><button class="secondary-button" type="button" data-add-contribution="${escapeHtml(family.id)}">Registrar aportación</button></div>
       <div class="contribution-list">${ledgerEntries.length ? ledgerEntries.slice(0, 10).map((entry) => `<div><span><strong>${escapeHtml(entry.concept)}</strong><small>${formatDate(entry.date)} · ${escapeHtml(entry.type)}</small></span><strong class="ledger-amount ${entry.amountCents >= 0 ? "is-credit" : "is-charge"}">${entry.amountCents >= 0 ? "+" : ""}${formatMoney(entry.amountCents)}</strong></div>`).join("") : `<p class="empty-copy">Todavía no hay movimientos registrados.</p>`}</div>
       ${family.notes ? `<p class="family-note"><strong>Observación:</strong> ${escapeHtml(family.notes)}</p>` : ""}
@@ -1393,6 +1427,8 @@ function bindDialogInteractions() {
 function openMoreDialog() {
   const pendingRoutes = visibleRoutes().filter((route) => !["inicio", "familias", "gastos", "agua"].includes(route.id));
   openDialog(`${dialogHeader("Navegación", "Más secciones")}<div class="more-menu">${pendingRoutes.map((route) => route.enabled ? `<a href="#${route.id}"><span>${icon(route.icon)}</span><strong>${route.label}</strong><small>Disponible</small></a>` : `<div><span>${icon(route.icon)}</span><strong>${route.label}</strong><small>Próxima fase</small></div>`).join("")}</div>`);
+  const dialog = document.querySelector("#app-dialog");
+  dialog.querySelectorAll(".more-menu a").forEach((link) => link.addEventListener("click", () => dialog.close(), { once: true }));
 }
 
 function openAppearanceDialog() {

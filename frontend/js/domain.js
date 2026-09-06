@@ -112,7 +112,8 @@ export function calculateFamilyAccount({ familyId, expectedQuotaCents, contribut
   const quotaCoveredCents = Math.min(contributionsCents, expectedQuotaCents);
   const extraContributionsCents = Math.max(0, contributionsCents - expectedQuotaCents);
   const quotaPendingCents = Math.max(0, expectedQuotaCents - contributionsCents);
-  const chargesCents = waterChargesCents + assessmentChargesCents;
+  const chargesCents = expectedQuotaCents + waterChargesCents + assessmentChargesCents;
+  const balanceCents = creditsCents - chargesCents;
   return {
     contributionsCents,
     advanceCreditsCents,
@@ -124,7 +125,9 @@ export function calculateFamilyAccount({ familyId, expectedQuotaCents, contribut
     waterChargesCents,
     assessmentChargesCents,
     chargesCents,
-    balanceCents: creditsCents - chargesCents
+    balanceCents,
+    availableCents: Math.max(0, balanceCents),
+    pendingCents: Math.max(0, -balanceCents)
   };
 }
 

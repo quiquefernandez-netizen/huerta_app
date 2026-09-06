@@ -87,14 +87,19 @@ test("la interfaz deja al perfil normal registrar y reserva la administración",
   assert.match(source, /data-add-contribution="\$\{escapeHtml\(family\.id\)\}"/);
   assert.match(source, /isAdministrator\(\) \? `<button class="primary-button" type="button" data-open-water-settlement/);
   assert.match(source, /profileButton\.querySelector\("small"\)\.textContent = isAdministrator\(\) \? "Administrador" : "Perfil normal"/);
+  assert.match(source, /\.more-menu a[\s\S]*?dialog\.close\(\)/);
 });
 
 test("la cuota se configura únicamente desde Administración", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
   const topbarBlock = source.match(/function renderTopbar[\s\S]*?function renderRoute/)?.[0] ?? "";
   const adminBlock = source.match(/function renderAdministration[\s\S]*?function renderTopbar/)?.[0] ?? "";
   assert.doesNotMatch(topbarBlock, /data-open-quota/);
   assert.match(adminBlock, /data-open-quota/);
+  assert.match(adminBlock, /Centro de control/);
+  assert.match(adminBlock, /admin-card__actions/);
+  assert.match(styles, /\.admin-overview/);
 });
 
 test("los movimientos bancarios guardados se pueden revisar y volver a editar", async () => {
@@ -130,7 +135,17 @@ test("los importes de resumen se adaptan a cifras grandes sin salir de la tarjet
   assert.match(styles, /\.summary-card > div\s*\{[^}]*min-width:\s*0[^}]*flex:\s*1/);
   assert.match(styles, /\.summary-card strong\s*\{[^}]*overflow-wrap:\s*anywhere/);
   assert.match(styles, /\.summary-card strong\s*\{[^}]*word-break:\s*break-all/);
+  assert.match(styles, /\.summary-grid\s*\{[^}]*grid-template-columns:\s*repeat\(5,/);
   assert.match(themes, /\.summary-card:nth-child\(-n \+ 2\) strong\s*\{[^}]*white-space:\s*normal/);
+});
+
+test("Familias separa lo aportado y muestra un saldo comprensible", async () => {
+  const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  assert.match(source, /Aportación para cuota/);
+  assert.match(source, /Aportación adicional/);
+  assert.match(source, /Saldo a favor/);
+  assert.match(source, /Pendiente de aportar/);
+  assert.match(source, /Cuota mensual/);
 });
 
 test("las acciones de cabecera conservan superficie táctil y ocultan solo la etiqueta en móvil", async () => {
