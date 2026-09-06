@@ -479,7 +479,7 @@ function openQuotaDialog() {
   openDialog(`${dialogHeader("Configuración anual", "Cuota de la comunidad")}
     <form class="dialog-form" id="quota-form">
       <div class="form-row"><label>Año<input name="year" required type="number" min="2020" max="2100" value="${plan.year}"></label><label>Cuota mensual (€)<input name="monthlyAmount" required inputmode="decimal" value="${formatMoney(plan.monthlyAmountCents).replace(" €", "")}"></label></div>
-      <div class="quota-calculation"><span>Cuota anual</span><strong data-annual-quota>${formatMoney(plan.annualAmountCents)}</strong><small>12 mensualidades. Cada año conserva su propia configuración.</small></div>
+      <div class="quota-calculation"><span>Cuota anual</span><strong data-annual-quota>${formatMoney(plan.annualAmountCents)}</strong><small>12 mensualidades. Los ejercicios ya cerrados se conservan sin cambios.</small></div>
       <p class="form-error" role="alert" hidden></p>
       <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar demo</button></div>
     </form>`);
@@ -798,7 +798,7 @@ function bindDialogInteractions() {
       showToast(`Cuota ${year} actualizada en la demostración.`);
     } catch (saveError) {
       console.error(saveError);
-      error.textContent = "No hemos podido actualizar la cuota. Vuelve a intentarlo.";
+      error.textContent = saveError.message === "No se puede modificar una cuota de un ejercicio ya cerrado." ? saveError.message : "No hemos podido actualizar la cuota. Vuelve a intentarlo.";
       error.hidden = false;
       submitButton.disabled = false;
       submitButton.textContent = "Guardar demo";

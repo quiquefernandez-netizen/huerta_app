@@ -67,6 +67,7 @@ export class DemoDataService {
 
   async setQuotaPlan(plan) {
     await delay(240);
+    if (plan.year < new Date().getFullYear()) throw new Error("No se puede modificar una cuota de un ejercicio ya cerrado.");
     const created = { ...clone(plan), id: plan.id ?? `plan_demo_${plan.year}`, active: true };
     this.data.quotaPlans.forEach((item) => { item.active = false; });
     const existingIndex = this.data.quotaPlans.findIndex((item) => item.year === created.year);

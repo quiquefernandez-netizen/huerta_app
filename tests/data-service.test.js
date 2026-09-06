@@ -72,6 +72,11 @@ test("el servicio demo configura una única cuota anual activa sin cambiar aport
   assert.deepEqual(after.families.map((family) => family.contributedCents), before.families.map((family) => family.contributedCents));
 });
 
+test("el servicio demo conserva los ejercicios de cuota ya cerrados", async () => {
+  const service = new DemoDataService();
+  await assert.rejects(() => service.setQuotaPlan({ year: new Date().getFullYear() - 1, monthlyAmountCents: 2000 }), /ejercicio ya cerrado/);
+});
+
 test("el servicio demo versiona la tarifa de agua sin perder el histórico", async () => {
   const service = new DemoDataService();
   const before = await service.getSnapshot();
