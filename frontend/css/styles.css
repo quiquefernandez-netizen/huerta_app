@@ -55,6 +55,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .profile-button__text small { color: var(--muted); font-size: .7rem; }
 #main-content { max-width: 1500px; margin: 0 auto; padding: 20px clamp(24px, 4vw, 60px) 70px; }
 .page-note { margin: 0 0 14px; color: var(--muted); font-size: .78rem; }
+.admin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.admin-grid .panel { min-height: 210px; }
+.admin-grid h2 { margin: 3px 0 8px; font-family: var(--font-display); font-size: 1.35rem; }
+.admin-grid p:not(.section-kicker) { color: var(--muted); font-size: .82rem; }
+.admin-grid .page-actions { margin-top: 20px; }
 .loading-state { display: flex; min-height: 45vh; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
 .spinner { width: 24px; height: 24px; border: 3px solid var(--line); border-top-color: var(--forest-700); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -376,6 +381,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   :root { --sidebar-width: 218px; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dashboard-grid { grid-template-columns: 1fr; }
+  .admin-grid { grid-template-columns: 1fr 1fr; }
   .categories-panel { grid-row: auto; }
   .categories-panel { display: grid; grid-template-columns: 1fr 160px 1fr; align-items: center; gap: 20px; }
   .categories-panel .panel__heading { align-self: start; }
@@ -427,6 +433,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .summary-card strong { font-size: 1.32rem; }
   .summary-card small { margin-top: 7px; font-size: .68rem; }
   .dashboard-grid { gap: 12px; margin-top: 12px; }
+  .admin-grid { grid-template-columns: 1fr; gap: 12px; }
   .chart-panel { min-height: 320px; padding: 20px 16px 18px; overflow: hidden; }
   .bar-chart { height: 205px; gap: 7px; }
   .bar-chart__item small { font-size: .62rem; }

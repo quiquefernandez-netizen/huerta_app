@@ -12,7 +12,7 @@ const routes = [
   { id: "propuestas", label: "Propuestas", icon: "bulb", enabled: false },
   { id: "reuniones", label: "Reuniones", icon: "calendar", enabled: false },
   { id: "documentos", label: "Documentos", icon: "folder", enabled: false },
-  { id: "administracion", label: "Administración", icon: "settings", enabled: false }
+  { id: "administracion", label: "Administración", icon: "settings", enabled: true }
 ];
 
 const authService = createAuthService();
@@ -295,6 +295,10 @@ function renderPlaceholder(title) {
   return `<section class="empty-page"><span>${icon("calendar", "empty-page__icon")}</span><p class="section-kicker">Próxima fase</p><h2>${title}</h2><p>Esta sección está prevista, pero aún no forma parte de esta primera iteración.</p><a href="#inicio" class="secondary-button">Volver a Inicio</a></section>`;
 }
 
+function renderAdministration() {
+  return `<section class="admin-grid"><article class="panel"><p class="section-kicker">Configuración</p><h2>Cuotas y agua</h2><p>Configura importes nuevos sin modificar las liquidaciones ya emitidas.</p><div class="page-actions"><button class="secondary-button" type="button" data-open-quota>${icon("coins")} Cuota anual</button><button class="secondary-button" type="button" data-open-water-tariff>${icon("water")} Tarifa de agua</button></div></article><article class="panel"><p class="section-kicker">Accesos</p><h2>Credenciales</h2><p>La gestión de contraseñas administrativas se añadirá mediante una pantalla segura de servidor. Nunca se mostrarán ni guardarán en el navegador.</p><span class="help-label">Próxima mejora segura</span></article><article class="panel"><p class="section-kicker">Próximamente</p><h2>Categorías y reglas</h2><p>Las categorías de gasto y las reglas bancarias se configurarán aquí cuando se complete la siguiente fase.</p></article></section>`;
+}
+
 function renderTopbar(route) {
   const plan = activeQuotaPlan();
   const contexts = {
@@ -327,7 +331,7 @@ function renderRoute() {
   const route = visibleRoutes().find((item) => item.id === requestedRoute) || routes[0];
   renderNavigation(route.id);
   renderTopbar(route);
-  const renderers = { inicio: renderDashboard, familias: renderFamilies, gastos: renderExpenses, agua: renderWater };
+  const renderers = { inicio: renderDashboard, familias: renderFamilies, gastos: renderExpenses, agua: renderWater, administracion: renderAdministration };
   pageContent.innerHTML = renderers[route.id] ? renderers[route.id]() : renderPlaceholder(route.label);
   document.title = `${route.label} · Comunidad`;
   bindInteractions();
