@@ -225,6 +225,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .water-correction-button { justify-self: end; padding: 5px 10px; border: 0; background: transparent; color: var(--forest-700); font-size: .72rem; font-weight: 800; cursor: pointer; }
 .water-history { display: grid; gap: 8px; padding: 20px 25px 25px; }
 .water-history__row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 13px; border: 1px solid var(--line); border-radius: 12px; }
+.water-history button.water-history__row { width: 100%; background: var(--surface); color: inherit; text-align: left; cursor: pointer; }
+.water-history button.water-history__row:hover { border-color: var(--forest-700); box-shadow: 0 4px 14px rgba(36,53,44,.08); }
 .water-history__row.is-settled { border-color: #b9d8ca; background: #edf6f0; }
 .water-history__row strong, .water-history__row small { display: block; }
 .water-history__row small { margin-top: 2px; color: var(--muted); font-size: .72rem; }

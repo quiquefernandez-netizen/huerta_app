@@ -562,7 +562,7 @@ function openWaterHistoryDialog(familyId) {
   const family = data.families.find((item) => item.id === familyId);
   if (!family) return;
   const readings = data.waterReadings.filter((item) => item.familyId === familyId).sort((a, b) => b.date.localeCompare(a.date));
-  openDialog(`${dialogHeader("Contador individual", escapeHtml(family.name))}<div class="water-history"><p class="form-help">Las lecturas liquidadas quedan protegidas. Puedes corregir una pendiente si se introdujo por error.</p>${readings.map((reading) => { const settled = isWaterReadingSettled(reading); return `<article class="water-history__row${settled ? " is-settled" : ""}"><div><strong>${formatDecimal(reading.readingM3)} m³</strong><small>${formatDate(reading.date)} · ${settled ? "Liquidada" : "Pendiente de liquidar"}</small></div>${settled ? `<span class="reading-status">Liquidada</span>` : `<button class="secondary-button" type="button" data-edit-water-reading="${escapeHtml(reading.id)}">Corregir</button>`}</article>`; }).join("")}<div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cerrar</button><button class="primary-button" type="button" data-water-history-add="${escapeHtml(familyId)}">Nueva lectura</button></div></div>`);
+  openDialog(`${dialogHeader("Contador individual", escapeHtml(family.name))}<div class="water-history"><p class="form-help">Pulsa una lectura pendiente para corregirla. Las liquidadas quedan protegidas.</p>${readings.map((reading) => { const settled = isWaterReadingSettled(reading); const content = `<span><strong>${formatDecimal(reading.readingM3)} m³</strong><small>${formatDate(reading.date)} · ${settled ? "Liquidada" : "Pendiente de liquidar"}</small></span>`; return settled ? `<article class="water-history__row is-settled">${content}<span class="reading-status">Liquidada</span></article>` : `<button class="water-history__row is-editable" type="button" data-edit-water-reading="${escapeHtml(reading.id)}">${content}<span class="reading-status">Corregir</span></button>`; }).join("")}<div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cerrar</button><button class="primary-button" type="button" data-water-history-add="${escapeHtml(familyId)}">Nueva lectura</button></div></div>`);
 }
 
 function parseEuroInput(value) {
@@ -909,9 +909,10 @@ function bindDialogInteractions() {
     const latest = data.waterReadings.filter((reading) => reading.familyId === familyId).sort((a, b) => b.date.localeCompare(a.date))[0];
     const error = event.currentTarget.querySelector(".form-error");
     try {
+      if (current <= latest.readingM3) throw new RangeError("La lectura debe ser mayor que la anterior.");
       calculateWaterUsage(current, latest.readingM3);
     } catch (validationError) {
-      error.textContent = validationError instanceof RangeError ? "La lectura es menor que la anterior. Revísala o pide a un administrador que registre el cambio de contador." : "Escribe una lectura válida.";
+      error.textContent = validationError instanceof RangeError ? "La lectura debe ser mayor que la anterior. Revísala o pide a un administrador que registre el cambio de contador." : "Escribe una lectura válida.";
       error.hidden = false;
       return;
     }
