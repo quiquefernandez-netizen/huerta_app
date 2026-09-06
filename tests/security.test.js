@@ -16,6 +16,7 @@ const proposalsMigrationUrl = new URL("../supabase/migrations/027_proposals_and_
 const votingMigrationUrl = new URL("../supabase/migrations/028_proposal_voting.sql", import.meta.url);
 const meetingsMigrationUrl = new URL("../supabase/migrations/029_meetings_and_agenda.sql", import.meta.url);
 const minutesMigrationUrl = new URL("../supabase/migrations/030_meeting_minutes.sql", import.meta.url);
+const documentsMigrationUrl = new URL("../supabase/migrations/032_documents.sql", import.meta.url);
 const edgeFunctionUrl = new URL("../supabase/functions/unlock-access/index.ts", import.meta.url);
 
 test("la API anónima permanece cerrada", async () => {
@@ -201,4 +202,18 @@ test("las actas cerradas quedan protegidas y sus cambios se auditan", async () =
   assert.match(sql, /status = 'CERRADA'[\s\S]*closed_at/i);
   assert.match(sql, /protect_closed_minutes_agenda_changes/i);
   assert.match(sql, /audit_acta_puntos_changes/i);
+});
+
+test("los documentos se consultan y administran mediante RPC con enlaces HTTPS validados", async () => {
+  const sql = await readFile(documentsMigrationUrl, "utf8");
+  assert.match(sql, /alter table public\.documentos enable row level security/i);
+  assert.match(sql, /revoke all on table public\.documentos from anon, authenticated/i);
+  assert.match(sql.match(/function public\.list_documents[\s\S]*?\$\$;/i)?.[0] ?? "", /current_user_is_active/);
+  assert.match(sql.match(/function public\.list_documents[\s\S]*?\$\$;/i)?.[0] ?? "", /visibility = 'COMUNIDAD'[\s\S]*current_user_is_admin/);
+  for (const name of ["create_document", "update_document", "delete_document"]) {
+    assert.match(sql.match(new RegExp(`function public\\.${name}[\\s\\S]*?\\$\\$;`, "i"))?.[0] ?? "", /current_user_is_admin/);
+  }
+  assert.match(sql, /url ~ '\^https:\/\//i);
+  assert.match(sql, /document_relation_exists/i);
+  assert.match(sql, /audit_documentos_changes/i);
 });

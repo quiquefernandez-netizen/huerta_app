@@ -48,7 +48,7 @@ El flujo principal está completado: importación XLS/XLSX/CSV, previsualizació
 
 ## Fase 3 — vida comunitaria
 
-Completados propuestas, presupuestos, votaciones internas, reuniones, orden del día y actas estructuradas. Administración prepara el borrador por puntos, indica asistentes, revisa y cierra; un acta cerrada y su reunión quedan protegidas. Pendiente: documentos.
+Completados propuestas, presupuestos, votaciones internas, reuniones, orden del día, actas estructuradas y catálogo documental. Administración prepara el borrador por puntos, indica asistentes, revisa y cierra; un acta cerrada y su reunión quedan protegidas. Documentos permite catalogar enlaces HTTPS, clasificarlos y relacionarlos con gastos, propuestas, reuniones o actas. La subida de binarios queda pendiente hasta decidir el proveedor de almacenamiento.
 
 ## Fase 4 — solo tras estabilizar lo anterior
 
@@ -56,4 +56,4 @@ PWA completa, notificaciones, informes, exportación PDF, consultas mediante IA,
 
 ## Decisiones abiertas
 
-Nombre, logo, paleta, almacenamiento de documentos, formato bancario exacto, precio real de agua, familias y cuotas reales. Hasta resolverlas se usarán datos ficticios.
+Nombre, logo, paleta, proveedor de almacenamiento y subida de documentos, formato bancario exacto, precio real de agua, familias y cuotas reales. Hasta resolverlas se usarán datos ficticios.

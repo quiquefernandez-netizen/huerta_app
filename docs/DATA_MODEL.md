@@ -289,7 +289,7 @@ Implementada como `acta_puntos`: `id`, `minutes_id`, `agenda_item_id`, `position
 
 ### DOCUMENTOS
 
-`id`, `nombre`, `tipo`, `fecha`, `url`, `entidad_tipo`, `entidad_id`, `visibilidad`, `notas`, `creado_en`. Los binarios se almacenarán en Supabase Storage y la tabla conservará solo la referencia.
+Implementada como `documentos`: `id`, `name`, `document_type`, `document_date`, `url`, `entity_type`, `entity_id`, `visibility`, `notes`, `created_by`, `created_at`, `updated_at`. Los tipos son factura, presupuesto, acta, recibo, contrato y otro. La relación opcional se valida contra gasto, propuesta, reunión o acta. La base de datos acepta únicamente referencias HTTPS y no almacena binarios. El proveedor y el flujo de subida se decidirán posteriormente; no se presupone todavía Supabase Storage.
 
 ### AUDITORIA
 

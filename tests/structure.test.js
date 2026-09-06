@@ -79,6 +79,19 @@ test("Reuniones está disponible con orden del día editable y responsive", asyn
   assert.match(styles, /\.minutes-items/);
 });
 
+test("Documentos ofrece un catálogo responsive de enlaces seguros", async () => {
+  const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
+  assert.match(source, /id: "documentos"[^\n]+enabled: true/);
+  assert.match(source, /function renderDocuments/);
+  assert.match(source, /function safeDocumentUrl/);
+  assert.match(source, /id="document-form"/);
+  assert.match(source, /target="_blank" rel="noopener noreferrer"/);
+  assert.match(source, /data-document-filter/);
+  assert.match(styles, /\.document-grid/);
+  assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?\.document-grid \{ grid-template-columns: 1fr/);
+});
+
 test("la interfaz deja al perfil normal registrar y reserva la administración", async () => {
   const source = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
   assert.match(source, /route\.id !== "administracion" \|\| isAdministrator\(\)/);

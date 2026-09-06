@@ -220,6 +220,29 @@ export class DemoDataService {
     Object.assign(meeting.minutes, { status: "CERRADA", closedAt: new Date().toISOString() }); meeting.status = "CELEBRADA"; this.refreshNextMeeting(); return true;
   }
 
+  async createDocument(document) {
+    await delay(180);
+    const created = { ...clone(document), id: `doc_demo_${crypto.randomUUID()}` };
+    this.data.documents = [created, ...(this.data.documents ?? [])];
+    return clone(created);
+  }
+
+  async updateDocument(document) {
+    await delay(180);
+    const index = (this.data.documents ?? []).findIndex((item) => item.id === document.id);
+    if (index < 0) throw new Error("El documento no existe.");
+    this.data.documents[index] = { ...this.data.documents[index], ...clone(document) };
+    return clone(this.data.documents[index]);
+  }
+
+  async deleteDocument(id) {
+    await delay(160);
+    const before = (this.data.documents ?? []).length;
+    this.data.documents = (this.data.documents ?? []).filter((item) => item.id !== id);
+    if (this.data.documents.length === before) throw new Error("El documento no existe.");
+    return true;
+  }
+
   async updateAssessment(assessment) {
     await delay(280);
     const index = this.data.assessments.findIndex((item) => item.id === assessment.id);
@@ -423,11 +446,11 @@ export class SupabaseDataService {
   }
 
   async getSnapshot() {
-    const [snapshot, proposals, meetings, minutes] = await Promise.all([this.rpc("get_community_snapshot"), this.rpc("list_proposals"), this.rpc("list_meetings"), this.rpc("list_meeting_minutes")]);
+    const [snapshot, proposals, meetings, minutes, documents] = await Promise.all([this.rpc("get_community_snapshot"), this.rpc("list_proposals"), this.rpc("list_meetings"), this.rpc("list_meeting_minutes"), this.rpc("list_documents")]);
     const next = [...meetings].filter((meeting) => meeting.status === "PLANIFICADA" && meeting.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))[0];
     const nextMeeting = next ? { day: Number(next.date.slice(8, 10)), month: new Intl.DateTimeFormat("es-ES", { month: "long" }).format(new Date(`${next.date}T12:00:00`)), time: next.time, place: next.place } : { day: "—", month: "Sin fecha", time: "", place: "Por concretar" };
     const minutesByMeeting = new Map(minutes.map((item) => [item.meetingId, item]));
-    return { ...snapshot, community: { ...snapshot.community, nextMeeting }, proposals, meetings: meetings.map((meeting) => ({ ...meeting, minutes: minutesByMeeting.get(meeting.id) ?? null })) };
+    return { ...snapshot, community: { ...snapshot.community, nextMeeting }, proposals, meetings: meetings.map((meeting) => ({ ...meeting, minutes: minutesByMeeting.get(meeting.id) ?? null })), documents };
   }
 
   createFamily(family) {
@@ -616,6 +639,9 @@ export class SupabaseDataService {
   updateMeetingMinutes(minutes) { return this.rpc("update_meeting_minutes", { p_id: minutes.id, p_attendee_family_ids: minutes.attendeeFamilyIds, p_content: minutes.content ?? "", p_status: minutes.status }); }
   updateMinutesItem(item) { return this.rpc("update_minutes_item", { p_id: item.id, p_summary: item.summary, p_decision: item.decision, p_observations: item.observations ?? "" }); }
   closeMeetingMinutes(id) { return this.rpc("close_meeting_minutes", { p_id: id }); }
+  createDocument(document) { return this.rpc("create_document", { p_name: document.name, p_type: document.type, p_date: document.date, p_url: document.url, p_entity_type: document.entityType, p_entity_id: document.entityId || null, p_visibility: document.visibility, p_notes: document.notes ?? "" }); }
+  updateDocument(document) { return this.rpc("update_document", { p_id: document.id, p_name: document.name, p_type: document.type, p_date: document.date, p_url: document.url, p_entity_type: document.entityType, p_entity_id: document.entityId || null, p_visibility: document.visibility, p_notes: document.notes ?? "" }); }
+  deleteDocument(id) { return this.rpc("delete_document", { p_id: id }); }
 }
 
 export function createDataService(config = globalThis.APP_CONFIG) {

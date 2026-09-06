@@ -197,6 +197,31 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .minutes-items dt { color: var(--muted); font-size: .65rem; font-weight: 700; text-transform: uppercase; }
 .minutes-items dd { margin: 0; font-size: .74rem; }
 .minutes-items article > small { display: block; margin: 9px 0 0 37px; color: var(--forest-700); font-size: .66rem; }
+.document-summary { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 18px 20px; }
+.document-summary__icon { display: grid; width: 46px; height: 46px; flex: none; place-items: center; border-radius: 14px; background: var(--forest-100); color: var(--forest-700); }
+.document-summary h2 { margin: 0; font-family: var(--font-display); font-size: 1.25rem; }
+.document-summary p { margin: 3px 0 0; color: var(--muted); font-size: .76rem; }
+.document-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.document-grid > .empty-list { grid-column: 1 / -1; }
+.document-card { display: flex; min-width: 0; min-height: 225px; flex-direction: column; padding: 19px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow); }
+.document-card__top, .document-card__actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.document-card__top time { flex: none; color: var(--muted); font-size: .68rem; }
+.document-card__type { display: inline-flex; min-width: 0; align-items: center; gap: 7px; color: var(--forest-700); font-size: .68rem; font-weight: 800; text-transform: uppercase; }
+.document-card__type .icon { width: 17px; height: 17px; flex: none; }
+.document-card h3 { margin: 20px 0 5px; overflow-wrap: anywhere; font-family: var(--font-display); font-size: 1.18rem; line-height: 1.2; }
+.document-card > p { margin: 0; color: var(--muted); font-size: .72rem; }
+.document-card > small { display: -webkit-box; overflow: hidden; margin-top: 10px; color: var(--muted); font-size: .72rem; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.document-card__actions { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--line); }
+.document-card__actions .text-link { font-size: .72rem; }
+.document-card__actions .text-link .icon { width: 15px; height: 15px; }
+.document-card__actions .secondary-button { min-height: 38px; padding: 7px 10px; font-size: .7rem; }
+.document-link-error { color: var(--muted); font-size: .68rem; }
+.document-detail { padding: 24px 26px 28px; }
+.document-detail dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.document-detail dl > div { min-width: 0; padding: 12px; border-radius: 12px; background: var(--surface-soft); }
+.document-detail dt { color: var(--muted); font-size: .64rem; font-weight: 750; text-transform: uppercase; }
+.document-detail dd { margin: 3px 0 0; overflow-wrap: anywhere; font-size: .76rem; font-weight: 700; }
+.document-detail > p { margin: 18px 0 0; font-size: .8rem; line-height: 1.55; }
 .minutes-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
 .minutes-actions small { color: var(--muted); font-size: .66rem; line-height: 1.4; }
 .minutes-closed { margin: 13px 0 0 !important; padding: 11px 12px; border-radius: 11px; background: var(--surface-soft); color: var(--muted); font-size: .7rem !important; }
@@ -551,6 +576,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .categories-panel .panel__heading { align-self: start; }
   .family-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .proposal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .document-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .water-summary { grid-template-columns: 1fr 1fr; }
   .water-summary .tariff-card { grid-column: 1 / -1; min-height: 105px; }
 }
@@ -628,6 +654,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .inline-summary > div:nth-child(4) { padding-top: 13px; }
   .family-grid { grid-template-columns: 1fr; gap: 11px; }
   .proposal-grid { grid-template-columns: 1fr; gap: 11px; }
+  .document-grid { grid-template-columns: 1fr; gap: 11px; }
+  .document-card { min-height: 205px; padding: 17px; }
+  .document-summary { align-items: flex-start; padding: 16px; }
   .proposal-card { min-height: 210px; padding: 17px; }
   .expense-overview { grid-template-columns: 1fr; gap: 12px; }
   .feature-total { min-height: 205px; }
@@ -649,7 +678,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .app-dialog { max-height: calc(100vh - 24px); border-radius: 20px; }
   .dialog-header { padding: 19px 18px 15px; }
   .dialog-tabs { padding: 13px 18px 0; }
-  .dialog-family-summary, .dialog-form, .proposal-detail, .meeting-detail { padding: 19px 18px 22px; }
+  .dialog-family-summary, .dialog-form, .proposal-detail, .meeting-detail, .document-detail { padding: 19px 18px 22px; }
+  .document-detail dl { grid-template-columns: 1fr; }
   .settlement-dialog { padding: 19px 18px 22px; }
   .water-history { padding: 19px 18px 22px; }
   .dialog-section-heading { align-items: stretch; flex-direction: column; }

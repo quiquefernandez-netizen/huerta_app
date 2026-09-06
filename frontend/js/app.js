@@ -12,7 +12,7 @@ const routes = [
   { id: "agua", label: "Agua", icon: "water", enabled: true },
   { id: "propuestas", label: "Propuestas", icon: "bulb", enabled: true },
   { id: "reuniones", label: "Reuniones", icon: "calendar", enabled: true },
-  { id: "documentos", label: "Documentos", icon: "folder", enabled: false },
+  { id: "documentos", label: "Documentos", icon: "folder", enabled: true },
   { id: "administracion", label: "Administración", icon: "settings", enabled: true }
 ];
 
@@ -26,6 +26,7 @@ let expenseFilter = "Todas";
 let bankPreview = null;
 let bankRules = [];
 let bankMovementFilter = "all";
+let documentFilter = "TODOS";
 
 function icon(name, className = "icon") {
   return `<svg class="${className}" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
@@ -596,6 +597,68 @@ async function parseBankFile(file) {
   return rowsAfterBankHeader(globalThis.XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "", raw: false, dateNF: "dd/mm/yyyy" }));
 }
 
+const documentTypeLabels = { FACTURA: "Factura", PRESUPUESTO: "Presupuesto", ACTA: "Acta", RECIBO: "Recibo", CONTRATO: "Contrato", OTRO: "Otro" };
+
+function safeDocumentUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function documentRelationLabel(document) {
+  if (document.entityType === "GASTO") return data.expenses.find((item) => item.id === document.entityId)?.concept ?? "Gasto relacionado";
+  if (document.entityType === "PROPUESTA") return data.proposals.find((item) => item.id === document.entityId)?.title ?? "Propuesta relacionada";
+  if (document.entityType === "REUNION") {
+    const meeting = data.meetings.find((item) => item.id === document.entityId);
+    return meeting ? `Reunión del ${formatDate(meeting.date)}` : "Reunión relacionada";
+  }
+  if (document.entityType === "ACTA") {
+    const meeting = data.meetings.find((item) => item.minutes?.id === document.entityId);
+    return meeting ? `Acta del ${formatDate(meeting.date)}` : "Acta relacionada";
+  }
+  return "Documento general";
+}
+
+function documentRelationOptions(selectedType = "GENERAL", selectedId = null) {
+  const option = (type, id, label) => `<option value="${type}|${escapeHtml(id ?? "")}"${selectedType === type && selectedId === id ? " selected" : ""}>${escapeHtml(label)}</option>`;
+  return `${option("GENERAL", null, "General · sin relación")}
+    <optgroup label="Gastos">${(data.expenses ?? []).map((item) => option("GASTO", item.id, `${formatDate(item.date)} · ${item.concept}`)).join("")}</optgroup>
+    <optgroup label="Propuestas">${(data.proposals ?? []).map((item) => option("PROPUESTA", item.id, item.title)).join("")}</optgroup>
+    <optgroup label="Reuniones">${(data.meetings ?? []).map((item) => option("REUNION", item.id, `${formatDate(item.date)} · ${item.place}`)).join("")}</optgroup>
+    <optgroup label="Actas">${(data.meetings ?? []).filter((item) => item.minutes).map((item) => option("ACTA", item.minutes.id, `Acta del ${formatDate(item.date)}`)).join("")}</optgroup>`;
+}
+
+function renderDocuments() {
+  const documents = [...(data.documents ?? [])].sort((a, b) => b.date.localeCompare(a.date));
+  const visible = documentFilter === "TODOS" ? documents : documents.filter((item) => item.type === documentFilter);
+  const communityCount = documents.filter((item) => item.visibility === "COMUNIDAD").length;
+  const relatedCount = documents.filter((item) => item.entityType !== "GENERAL").length;
+  const types = ["TODOS", ...Object.keys(documentTypeLabels).filter((type) => documents.some((item) => item.type === type))];
+  return `<section class="document-summary panel"><span class="document-summary__icon">${icon("folder")}</span><div><p class="section-kicker">Archivo común</p><h2>${documents.length} ${documents.length === 1 ? "documento" : "documentos"}</h2><p>${communityCount} visibles para la comunidad · ${relatedCount} relacionados con otra sección</p></div></section>
+    <section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Consulta sencilla</p><h3>Documentos de la comunidad</h3></div></div>
+      <div class="filter-chips" aria-label="Filtrar documentos">${types.map((type) => `<button class="filter-chip${documentFilter === type ? " is-active" : ""}" type="button" data-document-filter="${type}">${type === "TODOS" ? "Todos" : documentTypeLabels[type]}</button>`).join("")}</div>
+      <div class="document-grid" aria-label="Listado de documentos">${visible.length ? visible.map((document) => {
+        const url = safeDocumentUrl(document.url);
+        return `<article class="document-card"><div class="document-card__top"><span class="document-card__type">${icon("folder")} ${escapeHtml(documentTypeLabels[document.type] ?? "Documento")}</span><time datetime="${escapeHtml(document.date)}">${formatDate(document.date)}</time></div><h3>${escapeHtml(document.name)}</h3><p>${escapeHtml(documentRelationLabel(document))}</p>${document.notes ? `<small>${escapeHtml(document.notes)}</small>` : ""}<div class="document-card__actions">${url ? `<a class="text-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Abrir enlace ${icon("arrow")}</a>` : `<span class="document-link-error">Enlace no disponible</span>`}<button class="secondary-button" type="button" data-document-id="${escapeHtml(document.id)}">Ver detalles</button></div></article>`;
+      }).join("") : `<div class="empty-list"><strong>No hay documentos en este filtro.</strong><span>${documents.length ? "Prueba con otra categoría." : "Administración puede añadir el primer enlace documental."}</span></div>`}</div>
+    </section><aside class="info-note">${icon("folder")}<p><strong>Catálogo de enlaces seguros.</strong> Por ahora se guarda la referencia HTTPS; el almacenamiento de archivos se decidirá antes de habilitar subidas.</p></aside>`;
+}
+
+function openDocumentForm(document = null) {
+  const typeOptions = Object.entries(documentTypeLabels).map(([value, label]) => `<option value="${value}"${document?.type === value ? " selected" : ""}>${label}</option>`).join("");
+  openDialog(`${dialogHeader(document ? "Editar documento" : "Nuevo documento", document ? escapeHtml(document.name) : "Añadir al archivo común")}<form class="dialog-form" id="document-form"><input type="hidden" name="id" value="${escapeHtml(document?.id ?? "")}"><label>Nombre<input name="name" required minlength="2" maxlength="180" value="${escapeHtml(document?.name ?? "")}" placeholder="Ej. Factura de electricidad"></label><div class="form-row"><label>Tipo<select name="type">${typeOptions}</select></label><label>Fecha<input name="date" type="date" required value="${document?.date ?? todayIso()}"></label></div><label>Enlace HTTPS<input name="url" type="url" required maxlength="2000" pattern="https://.*" value="${escapeHtml(document?.url ?? "")}" placeholder="https://..."><small>El archivo no se copia en la aplicación; se guarda únicamente este enlace.</small></label><label>Relacionado con<select name="relation">${documentRelationOptions(document?.entityType, document?.entityId)}</select></label><label>Visibilidad<select name="visibility"><option value="COMUNIDAD"${document?.visibility !== "ADMINISTRACION" ? " selected" : ""}>Toda la comunidad</option><option value="ADMINISTRACION"${document?.visibility === "ADMINISTRACION" ? " selected" : ""}>Solo administración</option></select></label><label>Notas<textarea name="notes" maxlength="1000">${escapeHtml(document?.notes ?? "")}</textarea></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">${document ? "Guardar cambios" : "Añadir documento"}</button></div></form>`);
+}
+
+function openDocumentDetail(documentId) {
+  const document = (data.documents ?? []).find((item) => item.id === documentId);
+  if (!document) return showToast("No encontramos ese documento.");
+  const url = safeDocumentUrl(document.url);
+  openDialog(`${dialogHeader(documentTypeLabels[document.type] ?? "Documento", escapeHtml(document.name))}<div class="document-detail"><dl><div><dt>Fecha</dt><dd>${formatDate(document.date)}</dd></div><div><dt>Relacionado con</dt><dd>${escapeHtml(documentRelationLabel(document))}</dd></div><div><dt>Visibilidad</dt><dd>${document.visibility === "ADMINISTRACION" ? "Solo administración" : "Toda la comunidad"}</dd></div></dl>${document.notes ? `<p>${escapeHtml(document.notes)}</p>` : ""}<div class="dialog-actions">${isAdministrator() ? `<button class="text-button danger-text" type="button" data-delete-document="${escapeHtml(document.id)}">Eliminar</button><button class="secondary-button" type="button" data-edit-document="${escapeHtml(document.id)}">Editar</button>` : ""}${url ? `<a class="primary-button" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Abrir documento ${icon("arrow")}</a>` : ""}</div></div>`);
+}
+
 function renderAdministration() {
   const plan = activeQuotaPlan();
   const tariff = currentWaterTariff();
@@ -636,7 +699,8 @@ function renderTopbar(route) {
     gastos: `Gastos y derramas · ${plan.year}`,
     agua: "Lecturas y liquidaciones",
     propuestas: "Ideas y presupuestos",
-    reuniones: "Próximas reuniones y orden del día"
+    reuniones: "Próximas reuniones y orden del día",
+    documentos: "Archivo común de la comunidad"
   };
   let actions = "";
   if (isAdministrator() && route.id === "familias") {
@@ -655,6 +719,7 @@ function renderTopbar(route) {
     actions = `<button class="primary-button" type="button" data-open-proposal aria-label="Nueva propuesta">${icon("plus")}<span class="action-label">Nueva propuesta</span></button>`;
   }
   if (isAdministrator() && route.id === "reuniones") actions = `<button class="primary-button" type="button" data-open-meeting>${icon("plus")}<span class="action-label">Nueva reunión</span></button>`;
+  if (isAdministrator() && route.id === "documentos") actions = `<button class="primary-button" type="button" data-open-document aria-label="Añadir documento">${icon("plus")}<span class="action-label">Añadir documento</span></button>`;
   if (isAdministrator() && route.id === "banco") {
     actions = `<label class="primary-button file-button" aria-label="Añadir extracto">${icon("plus")} ${icon("excel")}<span class="action-label">Añadir</span><input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label>`;
   }
@@ -669,7 +734,7 @@ function renderRoute() {
   const route = visibleRoutes().find((item) => item.id === requestedRoute) || routes[0];
   renderNavigation(route.id);
   renderTopbar(route);
-  const renderers = { inicio: renderDashboard, familias: renderFamilies, banco: renderBank, gastos: renderExpenses, agua: renderWater, propuestas: renderProposals, reuniones: renderMeetings, administracion: renderAdministration };
+  const renderers = { inicio: renderDashboard, familias: renderFamilies, banco: renderBank, gastos: renderExpenses, agua: renderWater, propuestas: renderProposals, reuniones: renderMeetings, documentos: renderDocuments, administracion: renderAdministration };
   pageContent.innerHTML = renderers[route.id] ? renderers[route.id]() : renderPlaceholder(route.label);
   document.title = `${route.label} · Comunidad`;
   bindInteractions();
@@ -916,6 +981,55 @@ function centsInputValue(cents) {
 function bindDialogInteractions() {
   const dialog = document.querySelector("#app-dialog");
   dialog.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => dialog.close()));
+  dialog.querySelector("[data-edit-document]")?.addEventListener("click", (event) => {
+    const document = (data.documents ?? []).find((item) => item.id === event.currentTarget.dataset.editDocument);
+    if (document) openDocumentForm(document);
+  });
+  dialog.querySelector("[data-delete-document]")?.addEventListener("click", async (event) => {
+    const id = event.currentTarget.dataset.deleteDocument;
+    if (!window.confirm("¿Eliminar este documento del catálogo? El archivo enlazado no se borrará.")) return;
+    event.currentTarget.disabled = true;
+    try {
+      await service.deleteDocument(id);
+      data.documents = (data.documents ?? []).filter((item) => item.id !== id);
+      dialog.close();
+      renderRoute();
+      showToast("Documento eliminado del catálogo.");
+    } catch (error) {
+      event.currentTarget.disabled = false;
+      showToast("No hemos podido eliminar el documento.");
+    }
+  });
+  dialog.querySelector("#document-form")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const [entityType, entityIdValue] = String(form.get("relation")).split("|");
+    const document = { id: form.get("id") || null, name: String(form.get("name")).trim(), type: form.get("type"), date: form.get("date"), url: String(form.get("url")).trim(), entityType, entityId: entityIdValue || null, visibility: form.get("visibility"), notes: String(form.get("notes")).trim() };
+    const error = formElement.querySelector(".form-error");
+    if (!safeDocumentUrl(document.url)) {
+      error.textContent = "Escribe un enlace seguro que empiece por https://";
+      error.hidden = false;
+      return;
+    }
+    const submit = formElement.querySelector("button[type='submit']");
+    submit.disabled = true;
+    submit.textContent = "Guardando…";
+    try {
+      const saved = document.id ? await service.updateDocument(document) : await service.createDocument(document);
+      const index = (data.documents ?? []).findIndex((item) => item.id === saved.id);
+      if (index >= 0) data.documents[index] = saved; else data.documents = [saved, ...(data.documents ?? [])];
+      dialog.close();
+      renderRoute();
+      showToast(document.id ? "Documento actualizado." : "Documento añadido al catálogo.");
+    } catch (saveError) {
+      console.error(saveError);
+      error.textContent = "No hemos podido guardar el documento. Revisa el enlace y vuelve a intentarlo.";
+      error.hidden = false;
+      submit.disabled = false;
+      submit.textContent = document.id ? "Guardar cambios" : "Añadir documento";
+    }
+  });
   dialog.querySelector("[data-water-history-add]")?.addEventListener("click", (event) => { dialog.close(); openWaterDialog(event.currentTarget.dataset.waterHistoryAdd); });
   dialog.querySelectorAll("[data-edit-water-reading]").forEach((button) => button.addEventListener("click", () => openWaterCorrectionDialog(button.dataset.editWaterReading)));
   dialog.querySelector("[data-add-contribution]")?.addEventListener("click", (event) => {
@@ -1470,6 +1584,9 @@ function bindInteractions() {
   document.querySelectorAll("[data-proposal-id]").forEach((button) => button.addEventListener("click", () => openProposalDetail(button.dataset.proposalId)));
   document.querySelector("[data-open-meeting]")?.addEventListener("click", () => openMeetingForm());
   document.querySelectorAll("[data-meeting-id]").forEach((button) => button.addEventListener("click", () => openMeetingDetail(button.dataset.meetingId)));
+  document.querySelector("[data-open-document]")?.addEventListener("click", () => openDocumentForm());
+  document.querySelectorAll("[data-document-id]").forEach((button) => button.addEventListener("click", () => openDocumentDetail(button.dataset.documentId)));
+  document.querySelectorAll("[data-document-filter]").forEach((button) => button.addEventListener("click", () => { documentFilter = button.dataset.documentFilter; renderRoute(); }));
   document.querySelector("[data-open-expense]")?.addEventListener("click", openExpenseDialog);
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
   document.querySelectorAll("[data-edit-expense]").forEach((button) => button.addEventListener("click", () => openExpenseDialog(button.dataset.editExpense)));

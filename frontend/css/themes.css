@@ -179,7 +179,7 @@
   text-shadow: 0 1px 3px rgba(0,0,0,.58);
 }
 
-:root[data-theme="aero"] :is(.summary-card, .panel, .family-card, .inline-summary, .expense-list, .water-summary > article, .water-family-card, .assessment-card) {
+:root[data-theme="aero"] :is(.summary-card, .panel, .family-card, .inline-summary, .expense-list, .water-summary > article, .water-family-card, .assessment-card, .proposal-card, .meeting-card, .document-card) {
   border-color: rgba(191, 228, 255, 0.22);
   background:
     linear-gradient(150deg, rgba(255,255,255,.075), transparent 42%),

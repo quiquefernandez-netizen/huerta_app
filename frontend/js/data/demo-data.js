@@ -65,6 +65,11 @@ export const demoData = Object.freeze({
       { id: "ord_demo_3", position: 1, title: "Consumo de agua", description: "Revisión del consumo del semestre.", proposalId: null, proposalTitle: null, notes: "" }
     ], minutes: { id: "act_demo_1", meetingId: "reu_demo_2", date: "2026-07-12", content: "Resumen general ficticio de la reunión.", status: "REVISADA", closedAt: null, attendees: [{ familyId: "fam_roble", familyName: "Familia Roble" }, { familyId: "fam_olivo", familyName: "Familia Olivo" }], items: [{ id: "acp_demo_1", agendaItemId: "ord_demo_3", position: 1, subject: "Consumo de agua", summary: "Se revisó el consumo del semestre.", decision: "Continuar con las lecturas periódicas.", votingResult: null, observations: "" }] } }
   ],
+  documents: [
+    { id: "doc_demo_1", name: "Factura de revisión eléctrica", type: "FACTURA", date: "2026-08-28", url: "https://example.com/documentos/factura-electrica-demo.pdf", entityType: "GASTO", entityId: "gas_001", visibility: "COMUNIDAD", notes: "Referencia ficticia para probar el catálogo documental." },
+    { id: "doc_demo_2", name: "Presupuesto de iluminación", type: "PRESUPUESTO", date: "2026-08-30", url: "https://example.com/documentos/presupuesto-iluminacion-demo.pdf", entityType: "PROPUESTA", entityId: "prop_demo_1", visibility: "COMUNIDAD", notes: "Documento ficticio de demostración." },
+    { id: "doc_demo_3", name: "Acta de la reunión de julio", type: "ACTA", date: "2026-07-12", url: "https://example.com/documentos/acta-julio-demo.pdf", entityType: "ACTA", entityId: "act_demo_1", visibility: "COMUNIDAD", notes: "Copia ficticia del acta estructurada." }
+  ],
   expenseCategories: [
     { name: "Agua general", amountCents: 46000, color: "#3f7f8b" },
     { name: "Electricidad", amountCents: 78000, color: "#d69c45" },

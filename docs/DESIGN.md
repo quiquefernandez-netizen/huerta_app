@@ -98,6 +98,8 @@ Reuniones presenta cada encuentro como una tarjeta con fecha, lugar, estado y n�
 
 El acta se prepara dentro de la propia reunión. Se divide por puntos con etiquetas claras de resumen y decisión, muestra asistentes y evita un único formulario largo. El cierre es una acción confirmada y explica qué falta antes de permitirlo.
 
+Documentos se presenta como un archivo común de tarjetas filtrables, no como una tabla técnica. Cada tarjeta muestra tipo, fecha, nombre y relación; el enlace externo se identifica claramente y se abre de forma segura. En móvil las tarjetas se apilan y el formulario pasa a una columna.
+
 Gastos pregunta de forma explícita si pagó la cuenta común o una o varias familias. Si pagaron familias, permite detallar cuánto adelantó cada una y valida que la suma coincida. Derramas es una acción separada: se eligen participantes y se muestra el reparto antes de confirmar.
 
 ## Pendientes de diseño

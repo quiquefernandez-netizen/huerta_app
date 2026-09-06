@@ -278,6 +278,18 @@ test("la demo crea, completa y protege un acta cerrada", async () => {
   await assert.rejects(() => service.updateMeetingMinutes({ id: minutes.id, attendeeFamilyIds: [], content: "", status: "BORRADOR" }), /cerrada/i);
 });
 
+test("la demo permite añadir, corregir y retirar referencias documentales", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const created = await service.createDocument({ name: "Factura ficticia", type: "FACTURA", date: "2026-09-06", url: "https://example.com/factura.pdf", entityType: "GENERAL", entityId: null, visibility: "COMUNIDAD", notes: "Demo" });
+  const updated = await service.updateDocument({ ...created, name: "Factura ficticia corregida" });
+  assert.match(created.id, /^doc_demo_/);
+  assert.equal(updated.name, "Factura ficticia corregida");
+  assert.equal((await service.getSnapshot()).documents.length, before.documents.length + 1);
+  await service.deleteDocument(created.id);
+  assert.equal((await service.getSnapshot()).documents.length, before.documents.length);
+});
+
 test("Supabase carga propuestas y usa RPC protegidas para propuesta y presupuesto", async () => {
   const calls = [];
   const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
@@ -318,6 +330,20 @@ test("Supabase guarda y cierra actas mediante funciones protegidas", async () =>
   await service.closeMeetingMinutes("act-1");
   assert.deepEqual(calls.map((call) => call.url.split("/").at(-1)), ["create_meeting_minutes", "update_meeting_minutes", "update_minutes_item", "close_meeting_minutes"]);
   assert.deepEqual(JSON.parse(calls[1].options.body), { p_id: "act-1", p_attendee_family_ids: ["fam-1"], p_content: "Resumen", p_status: "REVISADA" });
+});
+
+test("Supabase carga y administra el catálogo documental solo mediante RPC", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", { getAccessToken: async () => "jwt-demo", fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => /list_(proposals|meetings|meeting_minutes|documents)$/.test(url) ? [] : { id: "doc-1" } }; } });
+  const snapshot = await service.getSnapshot();
+  const document = { id: "doc-1", name: "Factura", type: "FACTURA", date: "2026-09-06", url: "https://example.com/factura.pdf", entityType: "GENERAL", entityId: null, visibility: "COMUNIDAD", notes: "" };
+  await service.createDocument(document);
+  await service.updateDocument(document);
+  await service.deleteDocument(document.id);
+  assert.deepEqual(snapshot.documents, []);
+  assert.ok(calls.some((call) => call.url.endsWith("/rpc/list_documents")));
+  assert.deepEqual(calls.slice(-3).map((call) => call.url.split("/").at(-1)), ["create_document", "update_document", "delete_document"]);
+  assert.equal(JSON.parse(calls.at(-3).options.body).p_url, document.url);
 });
 
 test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {

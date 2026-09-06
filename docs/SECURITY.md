@@ -50,3 +50,5 @@ El frontend usa Supabase y las migraciones `001` a `011`, el seed ficticio, los 
 - Las contraseñas y tokens de sesión nunca se registran en logs o auditoría.
 
 Los textos procedentes de datos se escapan antes de insertarse en HTML y los colores configurables se limitan a valores hexadecimales válidos.
+
+El catálogo documental tampoco concede acceso directo a su tabla. Una sesión activa puede listar los documentos de visibilidad comunitaria; los marcados como administrativos y todas las altas, modificaciones y eliminaciones requieren rol Administrador en las funciones PostgreSQL. Las relaciones se comprueban en servidor y solo se aceptan enlaces HTTPS. En esta etapa no se suben ni almacenan binarios.
