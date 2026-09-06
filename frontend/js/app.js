@@ -62,9 +62,11 @@ function familyAccount(familyId) {
 }
 
 function familyAccountStatus(account) {
-  if (account.balanceCents > 0) return { key: "exceeded", label: "Saldo a favor", amountCents: account.balanceCents };
-  if (account.balanceCents < 0) return { key: "pending", label: "Pendiente", amountCents: Math.abs(account.balanceCents) };
-  return { key: "paid", label: "Al corriente", amountCents: 0 };
+  if (!account.quotaChargesCents) return { key: "paid", label: "Sin cuota configurada" };
+  if (account.extraContributionsCents > 0) return { key: "exceeded", label: "Cuota cubierta + extra" };
+  if (!account.quotaPendingCents) return { key: "paid", label: "Cuota cubierta" };
+  if (account.contributionsCents > 0) return { key: "partial", label: "Cuota parcial" };
+  return { key: "pending", label: "Sin aportación" };
 }
 
 function contributionsForFamily(familyId) {
@@ -72,8 +74,7 @@ function contributionsForFamily(familyId) {
 }
 
 function familyLedgerEntries(familyId) {
-  const plan = activeQuotaPlan();
-  const entries = [{ id: `quota_${plan.year}`, date: `${plan.year}-${String(plan.dueThroughMonth).padStart(2, "0")}-01`, concept: `Cuotas hasta ${String(plan.dueThroughMonth).padStart(2, "0")}/${plan.year}`, type: "Cargo", amountCents: -expectedQuotaCents() }];
+  const entries = [];
   contributionsForFamily(familyId).forEach((item) => entries.push({ id: item.id, date: item.date, concept: item.concept, type: "Aportación", amountCents: item.amountCents }));
   (data.expenses ?? []).forEach((expense) => (expense.payers ?? []).filter((payer) => payer.familyId === familyId).forEach((payer) => entries.push({ id: `${expense.id}_${familyId}`, date: expense.date, concept: `Adelanto: ${expense.concept}`, type: "Saldo a favor", amountCents: payer.amountCents })));
   (data.waterSettlements ?? []).forEach((settlement) => (settlement.items ?? []).filter((item) => item.familyId === familyId).forEach((item) => entries.push({ id: `${settlement.id}_${familyId}`, date: settlement.periodEnd, concept: "Liquidación de agua", type: "Cargo", amountCents: -item.amountCents })));
@@ -120,7 +121,7 @@ function renderNavigation(activeRoute) {
 function renderDashboard() {
   const activeFamilies = data.families.filter((family) => family.active);
   const plan = activeQuotaPlan();
-  const upToDate = activeFamilies.filter((family) => familyAccount(family.id).balanceCents >= 0).length;
+  const upToDate = activeFamilies.filter((family) => familyAccount(family.id).quotaPendingCents === 0).length;
   const activeFamilyCount = data.community.activeFamilyCount ?? activeFamilies.length;
   const maxMonthlyExpense = Math.max(1, ...data.monthlyExpensesCents);
   const categoryTotal = sumCents(data.expenseCategories, (category) => category.amountCents);
@@ -168,7 +169,7 @@ function renderDashboard() {
       </article>
       <article class="panel attention-card">
         <span class="attention-card__badge">${pendingFamilies}</span>
-        <div><p class="section-kicker">${pendingFamilies ? "Necesita atención" : "Saldos al día"}</p><h3>${pendingFamilies ? `${pendingFamilies} ${pendingFamilies === 1 ? "familia tiene" : "familias tienen"} saldo pendiente` : "Ninguna familia tiene saldo pendiente"}</h3><p>Incluye cuotas, aportaciones, agua, derramas y gastos adelantados.</p></div>
+        <div><p class="section-kicker">${pendingFamilies ? "Cuota por completar" : "Cuotas cubiertas"}</p><h3>${pendingFamilies ? `${pendingFamilies} ${pendingFamilies === 1 ? "familia aún no cubre" : "familias aún no cubren"} la cuota prevista` : "Todas las familias cubren la cuota prevista"}</h3><p>La cuota es una referencia; no se resta de las aportaciones.</p></div>
         <a class="text-link" href="#familias">Revisar ${icon("arrow")}</a>
       </article>
     </section>`;
@@ -190,18 +191,18 @@ function familyMonogram(family) {
 
 function renderFamilies() {
   const activeFamilies = data.families.filter((family) => family.active);
-  const plan = activeQuotaPlan();
   const accounts = new Map(activeFamilies.map((family) => [family.id, familyAccount(family.id)]));
-  const totalPendingCents = sumCents([...accounts.values()], (account) => Math.max(0, -account.balanceCents));
-  const totalFavourCents = sumCents([...accounts.values()], (account) => Math.max(0, account.balanceCents));
   const totalContributedCents = sumCents([...accounts.values()], (account) => account.contributionsCents);
+  const totalQuotaCoveredCents = sumCents([...accounts.values()], (account) => account.quotaCoveredCents);
+  const totalExtraCents = sumCents([...accounts.values()], (account) => account.extraContributionsCents);
+  const totalSettledChargesCents = sumCents([...accounts.values()], (account) => account.waterChargesCents + account.assessmentChargesCents);
 
   return `
     <section class="inline-summary" aria-label="Resumen de aportaciones">
-      <div><span>Cuota mensual</span><strong>${formatMoney(plan.monthlyAmountCents)}</strong></div>
-      <div><span>Aportado este año</span><strong>${formatMoney(totalContributedCents)}</strong></div>
-      <div><span>Saldos a favor</span><strong>${formatMoney(totalFavourCents)}</strong></div>
-      <div><span>Saldos pendientes</span><strong>${formatMoney(totalPendingCents)}</strong></div>
+      <div><span>Total aportado</span><strong>${formatMoney(totalContributedCents)}</strong></div>
+      <div><span>Aplicado a cuota</span><strong>${formatMoney(totalQuotaCoveredCents)}</strong></div>
+      <div><span>Aportación extra</span><strong>${formatMoney(totalExtraCents)}</strong></div>
+      <div><span>Agua y derramas</span><strong>${formatMoney(totalSettledChargesCents)}</strong></div>
     </section>
     <section class="family-grid" aria-label="Listado de familias">
       ${activeFamilies.map((family, index) => {
@@ -215,9 +216,9 @@ function renderFamilies() {
           </button>
           <div class="family-card__body">
             <span class="status-pill status-pill--${status.key}">${status.label}</span>
-            <div class="money-pair money-pair--balance"><span>${status.label}</span><strong>${formatMoney(status.amountCents)}</strong></div>
-            <div class="family-card__account"><span><small>Abonos</small><strong>${formatMoney(account.creditsCents)}</strong></span><span><small>Cargos</small><strong>${formatMoney(account.chargesCents)}</strong></span></div>
-            <div class="family-card__foot"><span>Aportado ${formatMoney(account.contributionsCents)}</span><span>${account.advanceCreditsCents ? `Adelantado ${formatMoney(account.advanceCreditsCents)}` : `Cuotas ${formatMoney(account.quotaChargesCents)}`}</span></div>
+            <div class="money-pair money-pair--balance"><span>Total aportado</span><strong>${formatMoney(account.contributionsCents)}</strong></div>
+            <div class="family-card__account"><span><small>Para cuota</small><strong>${formatMoney(account.quotaCoveredCents)}</strong></span><span><small>Extra aportado</small><strong>${formatMoney(account.extraContributionsCents)}</strong></span></div>
+            <div class="family-card__foot"><span>Cuota prevista ${formatMoney(account.quotaChargesCents)}</span><span>${account.chargesCents ? `Liquidaciones ${formatMoney(account.chargesCents)}` : "Sin liquidaciones"}</span></div>
           </div>
         </article>`;
       }).join("")}
@@ -485,7 +486,7 @@ function renderTopbar(route) {
   const plan = activeQuotaPlan();
   const contexts = {
     inicio: "Resumen de la comunidad",
-    familias: `Saldos y aportaciones · ${plan.year}`,
+    familias: `Aportaciones y cuota · ${plan.year}`,
     gastos: `Gastos y derramas · ${plan.year}`,
     agua: "Lecturas y liquidaciones"
   };
@@ -595,24 +596,23 @@ function openFamilyDialog(familyId) {
   const water = data.waterReadings.filter((reading) => reading.familyId === family.id).sort((a, b) => b.date.localeCompare(a.date))[0];
   openDialog(`${dialogHeader("Ficha de familia", escapeHtml(family.name))}
     <div class="dialog-family-summary">
-      <div class="detail-highlight"><span class="family-avatar">${escapeHtml(familyMonogram(family))}</span><div><strong>${status.label}</strong><span>${family.members} miembros · Alta ${formatDate(family.joinedAt)}</span></div></div>
-      <div class="detail-grid"><div><span>${status.label}</span><strong>${formatMoney(status.amountCents)}</strong></div><div><span>Aportaciones</span><strong>${formatMoney(account.contributionsCents)}</strong></div><div><span>Cuotas generadas</span><strong>${formatMoney(account.quotaChargesCents)}</strong></div><div><span>Agua liquidada</span><strong>${formatMoney(account.waterChargesCents)}</strong></div><div><span>Derramas</span><strong>${formatMoney(account.assessmentChargesCents)}</strong></div><div><span>Gastos adelantados</span><strong>${formatMoney(account.advanceCreditsCents)}</strong></div><div><span>Última lectura</span><strong>${water ? `${formatDecimal(water.readingM3)} m³` : "Sin lectura"}</strong></div></div>
+      <div class="detail-highlight"><span class="family-avatar">${escapeHtml(familyMonogram(family))}</span><div><strong>Total aportado: ${formatMoney(account.contributionsCents)}</strong><span>${status.label} · ${family.members} miembros</span></div></div>
+      <div class="detail-grid"><div><span>Aplicado a cuota</span><strong>${formatMoney(account.quotaCoveredCents)}</strong></div><div><span>Aportación extra</span><strong>${formatMoney(account.extraContributionsCents)}</strong></div><div><span>Cuota prevista a fecha</span><strong>${formatMoney(account.quotaChargesCents)}</strong></div><div><span>${account.balanceCents < 0 ? "Pendiente tras liquidaciones" : "Disponible tras liquidaciones"}</span><strong>${formatMoney(Math.abs(account.balanceCents))}</strong></div><div><span>Agua liquidada</span><strong>${formatMoney(account.waterChargesCents)}</strong></div><div><span>Derramas</span><strong>${formatMoney(account.assessmentChargesCents)}</strong></div><div><span>Gastos adelantados</span><strong>${formatMoney(account.advanceCreditsCents)}</strong></div><div><span>Última lectura</span><strong>${water ? `${formatDecimal(water.readingM3)} m³` : "Sin lectura"}</strong></div></div>
       <div class="dialog-section-heading"><div><span>Cuenta ${plan.year}</span><strong>Últimos movimientos</strong></div><button class="secondary-button" type="button" data-add-contribution="${escapeHtml(family.id)}">Registrar aportación</button></div>
       <div class="contribution-list">${ledgerEntries.length ? ledgerEntries.slice(0, 10).map((entry) => `<div><span><strong>${escapeHtml(entry.concept)}</strong><small>${formatDate(entry.date)} · ${escapeHtml(entry.type)}</small></span><strong class="ledger-amount ${entry.amountCents >= 0 ? "is-credit" : "is-charge"}">${entry.amountCents >= 0 ? "+" : ""}${formatMoney(entry.amountCents)}</strong></div>`).join("") : `<p class="empty-copy">Todavía no hay movimientos registrados.</p>`}</div>
       ${family.notes ? `<p class="family-note"><strong>Observación:</strong> ${escapeHtml(family.notes)}</p>` : ""}
-      <p class="demo-disclaimer">Datos ficticios. Los cambios de esta demostración se borran al recargar.</p>
     </div>`);
 }
 
 function openContributionDialog(familyId) {
   const family = data.families.find((item) => item.id === familyId);
-  openDialog(`${dialogHeader("Aportación mensual", `Registrar para ${escapeHtml(family.name)}`)}
+  openDialog(`${dialogHeader("Aportación", `Registrar para ${escapeHtml(family.name)}`)}
     <form class="dialog-form" id="contribution-form">
       <input type="hidden" name="familyId" value="${escapeHtml(family.id)}">
       <div class="form-row"><label>Importe (€)<input name="amount" required inputmode="decimal" value="${formatMoney(activeQuotaPlan().monthlyAmountCents).replace(" €", "")}"></label><label>Fecha<input name="date" required type="date" value="${todayIso()}"></label></div>
-      <label>Concepto<input name="concept" required maxlength="80" value="Aportación mensual"></label>
+      <label>Concepto<input name="concept" required maxlength="80" value="Aportación"></label>
       <p class="form-error" role="alert" hidden></p>
-      <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar demo</button></div>
+      <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Guardar aportación</button></div>
     </form>`);
 }
 
@@ -938,13 +938,13 @@ function bindDialogInteractions() {
       data.community.currentBalanceCents += created.amountCents;
       dialog.close();
       renderRoute();
-      showToast("Aportación añadida a la demostración. Se borrará al recargar.");
+      showToast("Aportación guardada correctamente.");
     } catch (saveError) {
       console.error(saveError);
       error.textContent = "No hemos podido guardar la aportación. Vuelve a intentarlo.";
       error.hidden = false;
       submitButton.disabled = false;
-      submitButton.textContent = "Guardar demo";
+      submitButton.textContent = "Guardar aportación";
     }
   });
 

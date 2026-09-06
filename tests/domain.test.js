@@ -91,7 +91,7 @@ test("una derrama se reparte exactamente aunque sobren céntimos", () => {
   assert.throws(() => splitCentsEvenly(100, []), /familia/);
 });
 
-test("el saldo familiar compensa aportaciones, agua, derramas y gastos adelantados", () => {
+test("la cuota clasifica la aportación sin restarla del saldo familiar", () => {
   const account = calculateFamilyAccount({
     familyId: "fam_a",
     expectedQuotaCents: 18000,
@@ -101,6 +101,18 @@ test("el saldo familiar compensa aportaciones, agua, derramas y gastos adelantad
     expenses: [{ payers: [{ familyId: "fam_a", amountCents: 2000 }] }]
   });
   assert.equal(account.creditsCents, 32000);
-  assert.equal(account.chargesCents, 27000);
-  assert.equal(account.balanceCents, 5000);
+  assert.equal(account.quotaCoveredCents, 18000);
+  assert.equal(account.extraContributionsCents, 12000);
+  assert.equal(account.quotaPendingCents, 0);
+  assert.equal(account.chargesCents, 9000);
+  assert.equal(account.balanceCents, 23000);
+});
+
+test("una aportación parcial conserva todo su valor y muestra la cuota por completar", () => {
+  const account = calculateFamilyAccount({ familyId: "fam_a", expectedQuotaCents: 18000, contributions: [{ familyId: "fam_a", amountCents: 10000 }] });
+  assert.equal(account.contributionsCents, 10000);
+  assert.equal(account.quotaCoveredCents, 10000);
+  assert.equal(account.extraContributionsCents, 0);
+  assert.equal(account.quotaPendingCents, 8000);
+  assert.equal(account.balanceCents, 10000);
 });

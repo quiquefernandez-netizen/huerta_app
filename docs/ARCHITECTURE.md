@@ -33,7 +33,7 @@ El enrutado por hash (`#inicio`, `#familias`, etc.) evita reglas de reescritura 
 
 ## Servicio de datos
 
-La UI llama a `createDataService()` y no conoce el origen de los registros. En modo `demo` mantiene una copia aislada de los datos ficticios durante la sesión. Familias, gastos, derramas y agua pasan por los mismos contratos que usará Supabase. El saldo familiar es derivado, nunca un total editable: aportaciones y adelantos menos cuotas, agua liquidada y derramas.
+La UI llama a `createDataService()` y no conoce el origen de los registros. En modo `demo` mantiene una copia aislada de los datos ficticios durante la sesión. Familias, gastos, derramas y agua pasan por los mismos contratos que usará Supabase. El saldo familiar es derivado, nunca un total editable: aportaciones y adelantos menos agua liquidada y derramas. La cuota sirve para clasificar la aportación cubierta y la aportación extra, pero no es un movimiento negativo.
 
 El adaptador `SupabaseDataService` llama por HTTPS a funciones PostgreSQL y añade el token de sesión cuando Auth lo proporcione, sin guardar ese token en la configuración. Agrupar la lectura inicial en `get_community_snapshot` permite devolver solo el resumen permitido al usuario y evita acoplar cada componente a consultas de tablas. `create_family` crea la ficha y su cuota anual inicial en una sola operación; `create_expense` exige rol administrador; `create_water_reading` valida sesión, familia, contador, secuencia acumulada y tarifa antes de insertar.
 

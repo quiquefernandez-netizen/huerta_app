@@ -11,6 +11,7 @@ const waterCorrectionMigrationUrl = new URL("../supabase/migrations/014_safe_wat
 const auditMigrationUrl = new URL("../supabase/migrations/004_phase1_audit.sql", import.meta.url);
 const quotaMigrationUrl = new URL("../supabase/migrations/005_quota_and_water_settlement_batches.sql", import.meta.url);
 const accountsMigrationUrl = new URL("../supabase/migrations/006_family_accounts_expenses_and_assessments.sql", import.meta.url);
+const quotaReferenceMigrationUrl = new URL("../supabase/migrations/026_quota_as_contribution_reference.sql", import.meta.url);
 const edgeFunctionUrl = new URL("../supabase/functions/unlock-access/index.ts", import.meta.url);
 
 test("la API anónima permanece cerrada", async () => {
@@ -140,4 +141,12 @@ test("el modelo incluye cuotas configurables, lotes de agua, pagadores y derrama
   assert.match(accountsSql, /create table if not exists public\.gasto_pagadores/i);
   assert.match(accountsSql, /create table if not exists public\.derramas/i);
   assert.match(accountsSql, /create or replace view public\.movimientos_cuenta_familia/i);
+});
+
+test("la cuota es una referencia y no un cargo en la cuenta familiar", async () => {
+  const sql = await readFile(quotaReferenceMigrationUrl, "utf8");
+  assert.match(sql, /create or replace view public\.movimientos_cuenta_familia/i);
+  assert.doesNotMatch(sql, /from public\.cuotas/i);
+  assert.match(sql, /'AGUA'[\s\S]*-'?[^\n]*amount_cents/i);
+  assert.match(sql, /'DERRAMA'[\s\S]*-'?[^\n]*amount_cents/i);
 });

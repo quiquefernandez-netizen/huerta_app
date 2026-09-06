@@ -109,12 +109,18 @@ export function calculateFamilyAccount({ familyId, expectedQuotaCents, contribut
   const waterChargesCents = sumCents(waterSettlements.flatMap((settlement) => settlement.items ?? []).filter((item) => item.familyId === familyId), (item) => item.amountCents);
   const assessmentChargesCents = sumCents(assessments.flatMap((assessment) => assessment.allocations ?? []).filter((item) => item.familyId === familyId), (item) => item.amountCents);
   const creditsCents = contributionsCents + advanceCreditsCents;
-  const chargesCents = expectedQuotaCents + waterChargesCents + assessmentChargesCents;
+  const quotaCoveredCents = Math.min(contributionsCents, expectedQuotaCents);
+  const extraContributionsCents = Math.max(0, contributionsCents - expectedQuotaCents);
+  const quotaPendingCents = Math.max(0, expectedQuotaCents - contributionsCents);
+  const chargesCents = waterChargesCents + assessmentChargesCents;
   return {
     contributionsCents,
     advanceCreditsCents,
     creditsCents,
     quotaChargesCents: expectedQuotaCents,
+    quotaCoveredCents,
+    extraContributionsCents,
+    quotaPendingCents,
     waterChargesCents,
     assessmentChargesCents,
     chargesCents,

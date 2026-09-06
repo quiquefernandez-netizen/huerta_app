@@ -317,10 +317,10 @@ PROPUESTAS ─< PRESUPUESTOS
 No se guarda un saldo editable. Se calcula siempre desde los documentos de origen:
 
 ```text
-saldo = aportaciones + gastos adelantados − cuotas − agua liquidada − derramas
+saldo = aportaciones + gastos adelantados − agua liquidada − derramas
 ```
 
-Un saldo positivo está a favor de la familia; uno negativo está pendiente. Corregir un histórico requiere anular o ajustar el documento origen, nunca sobrescribir el saldo.
+La cuota configurada se usa como referencia: `aplicado_a_cuota = min(aportaciones, cuota_prevista)` y `aportacion_extra = max(0, aportaciones − cuota_prevista)`. No genera una resta en la cuenta familiar. Un saldo positivo queda disponible para futuras liquidaciones; uno negativo refleja cargos liquidados pendientes. Corregir un histórico requiere anular o ajustar el documento origen, nunca sobrescribir el saldo.
 
 ## Validaciones críticas de PostgreSQL y servicios
 

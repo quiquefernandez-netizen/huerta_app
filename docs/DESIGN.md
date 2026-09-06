@@ -84,7 +84,7 @@ Medidas de revisión: 360 × 800, 390 × 844, 768 × 1024, 1280 × 800 y 1440 ×
 
 ## Saldos, cuotas, aportaciones y agua
 
-Familias muestra una cuenta comprensible: abonos, cargos y saldo a favor o pendiente. La ficha conserva aportaciones, cuotas, agua, derramas y adelantos con fecha, concepto y signo. Administración puede cambiar la cuota del ejercicio y ve de inmediato el equivalente anual.
+Familias da protagonismo al total aportado y lo separa en «aplicado a cuota» y «aportación extra». La cuota se presenta como referencia, nunca como una resta ficticia. La ficha conserva los movimientos reales de aportaciones, agua, derramas y adelantos con fecha, concepto y signo. Administración puede cambiar la cuota del ejercicio y ve de inmediato el equivalente anual.
 
 Agua presenta el consumo acumulado desde la última liquidación. «Liquidar agua» abre primero un resumen por familia con lectura anterior, lectura actual, consumo e importe. La confirmación crea cargos familiares que se compensan con cualquier saldo a favor.
 
