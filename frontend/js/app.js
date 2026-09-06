@@ -2,11 +2,12 @@ import { createDataService } from "./services/data-service.js";
 import { createAuthService } from "./services/auth-service.js";
 import { calculateAnnualQuotaCents, calculateExpectedQuotaCents, calculateFamilyAccount, calculateWaterCostCents, calculateWaterUsage, createWaterSettlementPreview, formatDate, formatMoney, splitCentsEvenly, sumCents } from "./domain.js";
 import { escapeHtml, safeCssColor } from "./html.js";
+import { detectBankDuplicates, normalizeBankRows } from "./services/bank-import.js";
 
 const routes = [
   { id: "inicio", label: "Inicio", icon: "home", enabled: true },
   { id: "familias", label: "Familias", icon: "people", enabled: true },
-  { id: "banco", label: "Banco", icon: "bank", enabled: false },
+  { id: "banco", label: "Banco", icon: "bank", enabled: true },
   { id: "gastos", label: "Gastos", icon: "receipt", enabled: true },
   { id: "agua", label: "Agua", icon: "water", enabled: true },
   { id: "propuestas", label: "Propuestas", icon: "bulb", enabled: false },
@@ -22,6 +23,7 @@ const pageContent = document.querySelector("#page-content");
 const loadingState = document.querySelector("#loading-state");
 let data;
 let expenseFilter = "Todas";
+let bankPreview = null;
 
 function icon(name, className = "icon") {
   return `<svg class="${className}" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
@@ -299,6 +301,43 @@ function renderPlaceholder(title) {
   return `<section class="empty-page"><span>${icon("calendar", "empty-page__icon")}</span><p class="section-kicker">Próxima fase</p><h2>${title}</h2><p>Esta sección está prevista, pero aún no forma parte de esta primera iteración.</p><a href="#inicio" class="secondary-button">Volver a Inicio</a></section>`;
 }
 
+function renderBank() {
+  const summary = bankPreview ? `<section class="inline-summary"><div><span>Movimientos válidos</span><strong>${bankPreview.records.length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Filas a revisar</span><strong>${bankPreview.errors.length}</strong></div><div><span>Listos para importar</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div></section><section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización local</p><h3>Revisa antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.map((item) => `<article class="bank-preview-row${item.duplicate ? " is-duplicate" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)}${item.reference ? ` · ${escapeHtml(item.reference)}` : ""}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.duplicate ? "Duplicado" : "Nuevo"}</span></article>`).join("")}${bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Revisar</span></article>`).join("")}</div><aside class="info-note info-note--warning"><p><strong>Aún no se ha importado nada.</strong> La confirmación y conciliación se habilitarán después de validar el formato de cada banco.</p></aside></section>` : `<section class="panel bank-empty"><p class="section-kicker">Importación manual</p><h2>Revisa el extracto antes de guardarlo</h2><p>Selecciona un CSV o prueba con movimientos ficticios. La aplicación detecta columnas, normaliza los importes y separa duplicados sin tocar la cuenta.</p><div class="page-actions"><label class="secondary-button file-button">Elegir CSV<input type="file" accept=".csv,text/csv" data-bank-file></label><button class="primary-button" type="button" data-bank-demo>Probar con datos ficticios</button></div></section>`;
+  return `${summary}<aside class="info-note">${icon("bank")}<p><strong>Banco trabaja siempre con previsualización.</strong> Nunca se guardará un extracto sin que administración lo confirme.</p></aside>`;
+}
+
+function createBankPreview(rows, source) {
+  const normalized = normalizeBankRows(rows, { source });
+  bankPreview = { ...normalized, records: detectBankDuplicates(normalized.records, []) };
+  renderRoute();
+}
+
+function parseCsvLine(line, delimiter) {
+  const values = [];
+  let value = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (quoted && line[index + 1] === '"') { value += '"'; index += 1; }
+      else quoted = !quoted;
+    } else if (character === delimiter && !quoted) {
+      values.push(value.trim()); value = "";
+    } else value += character;
+  }
+  values.push(value.trim());
+  return values;
+}
+
+function parseCsvFile(text) {
+  const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
+  if (!lines.length) throw new Error("El archivo está vacío.");
+  const delimiter = lines[0].includes(";") ? ";" : ",";
+  const headers = parseCsvLine(lines[0], delimiter).map((item) => item.trim());
+  if (!headers.some(Boolean)) throw new Error("No encontramos las cabeceras del extracto.");
+  return lines.slice(1).map((line) => Object.fromEntries(parseCsvLine(line, delimiter).map((value, index) => [headers[index], value])));
+}
+
 function renderAdministration() {
   return `<section class="admin-grid"><article class="panel"><p class="section-kicker">Configuración</p><h2>Cuotas y agua</h2><p>Configura importes nuevos sin modificar las liquidaciones ya emitidas.</p><div class="page-actions"><button class="secondary-button" type="button" data-open-quota>${icon("coins")} Cuota anual</button><button class="secondary-button" type="button" data-open-water-tariff>${icon("water")} Tarifa de agua</button></div></article><article class="panel"><p class="section-kicker">Accesos</p><h2>Credenciales</h2><p>La gestión de contraseñas administrativas se añadirá mediante una pantalla segura de servidor. Nunca se mostrarán ni guardarán en el navegador.</p><span class="help-label">Próxima mejora segura</span></article><article class="panel"><p class="section-kicker">Próximamente</p><h2>Categorías y reglas</h2><p>Las categorías de gasto y las reglas bancarias se configurarán aquí cuando se complete la siguiente fase.</p></article></section>`;
 }
@@ -335,7 +374,7 @@ function renderRoute() {
   const route = visibleRoutes().find((item) => item.id === requestedRoute) || routes[0];
   renderNavigation(route.id);
   renderTopbar(route);
-  const renderers = { inicio: renderDashboard, familias: renderFamilies, gastos: renderExpenses, agua: renderWater, administracion: renderAdministration };
+  const renderers = { inicio: renderDashboard, familias: renderFamilies, banco: renderBank, gastos: renderExpenses, agua: renderWater, administracion: renderAdministration };
   pageContent.innerHTML = renderers[route.id] ? renderers[route.id]() : renderPlaceholder(route.label);
   document.title = `${route.label} · Comunidad`;
   bindInteractions();
@@ -944,7 +983,7 @@ function bindDialogInteractions() {
 
 function openMoreDialog() {
   const pendingRoutes = visibleRoutes().filter((route) => !["inicio", "familias", "gastos", "agua"].includes(route.id));
-  openDialog(`${dialogHeader("Navegación", "Más secciones")}<div class="more-menu">${pendingRoutes.map((route) => `<div><span>${icon(route.icon)}</span><strong>${route.label}</strong><small>${route.enabled ? "Disponible" : "Próxima fase"}</small></div>`).join("")}</div>`);
+  openDialog(`${dialogHeader("Navegación", "Más secciones")}<div class="more-menu">${pendingRoutes.map((route) => route.enabled ? `<a href="#${route.id}"><span>${icon(route.icon)}</span><strong>${route.label}</strong><small>Disponible</small></a>` : `<div><span>${icon(route.icon)}</span><strong>${route.label}</strong><small>Próxima fase</small></div>`).join("")}</div>`);
 }
 
 function openAppearanceDialog() {
@@ -988,6 +1027,13 @@ function bindInteractions() {
   document.querySelectorAll("[data-water-history]").forEach((button) => button.addEventListener("click", () => openWaterHistoryDialog(button.dataset.waterHistory)));
   document.querySelectorAll("[data-expense-filter]").forEach((button) => button.addEventListener("click", () => { expenseFilter = button.dataset.expenseFilter; renderRoute(); }));
   document.querySelector("[data-open-appearance]")?.addEventListener("click", openAppearanceDialog);
+  document.querySelector("[data-bank-demo]")?.addEventListener("click", () => createBankPreview([{ Fecha: "01/09/2026", Concepto: "TRANSFERENCIA FICTICIA", Importe: "100,00", Saldo: "2.500,00", Referencia: "DEMO-001" }, { Fecha: "02/09/2026", Concepto: "RECIBO DEMO", Importe: "-25,50", Saldo: "2.474,50", Referencia: "DEMO-002" }, { Fecha: "02/09/2026", Concepto: "RECIBO DEMO", Importe: "-25,50", Saldo: "2.474,50", Referencia: "DEMO-002" }, { Fecha: "", Concepto: "Fila ficticia incompleta", Importe: "10" }], "demo"));
+  document.querySelector("[data-bank-file]")?.addEventListener("change", async (event) => {
+    const file = event.currentTarget.files?.[0];
+    if (!file) return;
+    try { createBankPreview(parseCsvFile(await file.text()), file.name); }
+    catch (error) { showToast(error.message || "No hemos podido leer ese CSV."); }
+  });
 }
 
 function registerWebMcpTools() {

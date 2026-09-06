@@ -60,6 +60,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .admin-grid h2 { margin: 3px 0 8px; font-family: var(--font-display); font-size: 1.35rem; }
 .admin-grid p:not(.section-kicker) { color: var(--muted); font-size: .82rem; }
 .admin-grid .page-actions { margin-top: 20px; }
+.bank-empty { max-width: 720px; }
+.bank-empty h2 { font-family: var(--font-display); }
+.file-button { position: relative; overflow: hidden; cursor: pointer; }
+.file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.bank-preview-list { display: grid; gap: 8px; }
+.bank-preview-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.bank-preview-row small { display: block; color: var(--muted); font-size: .72rem; }
+.bank-preview-row > span { padding: 4px 7px; border-radius: 999px; background: var(--forest-100); color: var(--forest-700); font-size: .65rem; font-weight: 800; }
+.bank-preview-row.is-duplicate { opacity: .68; background: #f7f0e5; }
+.bank-preview-row.is-error { background: #fae5df; }
 .loading-state { display: flex; min-height: 45vh; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
 .spinner { width: 24px; height: 24px; border: 3px solid var(--line); border-top-color: var(--forest-700); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -346,8 +356,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .previous-reading span { color: var(--muted); font-size: .75rem; }
 .previous-reading strong { font-family: var(--font-display); }
 .more-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px 25px 25px; }
-.more-menu > div { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 3px 10px; padding: 15px; border: 1px solid var(--line); border-radius: 14px; }
-.more-menu > div > span { display: grid; grid-row: span 2; width: 37px; height: 37px; place-items: center; border-radius: 11px; background: var(--forest-100); color: var(--forest-700); }
+.more-menu > :is(div, a) { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 3px 10px; padding: 15px; border: 1px solid var(--line); border-radius: 14px; color: inherit; text-decoration: none; }
+.more-menu > a { transition: border-color .16s, background .16s, transform .16s; }
+.more-menu > a:hover { border-color: var(--forest-500); background: var(--forest-50); transform: translateY(-1px); }
+.more-menu > :is(div, a) > span { display: grid; grid-row: span 2; width: 37px; height: 37px; place-items: center; border-radius: 11px; background: var(--forest-100); color: var(--forest-700); }
 .more-menu .icon { width: 19px; }
 .more-menu strong { font-size: .8rem; }
 .more-menu small { color: var(--muted); font-size: .67rem; }

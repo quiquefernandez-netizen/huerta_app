@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
     "test": "node --test",
-    "check": "node --check frontend/js/app.js && node --check frontend/js/domain.js && node --check frontend/js/html.js && node --check frontend/js/theme-manager.js && node --check frontend/js/icon-lab.js && node --check frontend/js/data/demo-data.js && node --check frontend/js/services/auth-service.js && node --check frontend/js/services/data-service.js"
+    "check": "node --check frontend/js/app.js && node --check frontend/js/domain.js && node --check frontend/js/html.js && node --check frontend/js/theme-manager.js && node --check frontend/js/icon-lab.js && node --check frontend/js/data/demo-data.js && node --check frontend/js/services/auth-service.js && node --check frontend/js/services/data-service.js && node --check frontend/js/services/bank-import.js"
   },
   "engines": {
     "node": ">=20"
