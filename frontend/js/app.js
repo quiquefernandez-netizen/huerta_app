@@ -302,7 +302,7 @@ function renderPlaceholder(title) {
 }
 
 function renderBank() {
-  const summary = bankPreview ? `<section class="inline-summary"><div><span>Movimientos válidos</span><strong>${bankPreview.records.length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Filas a revisar</span><strong>${bankPreview.errors.length}</strong></div><div><span>Listos para importar</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div></section><section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización local</p><h3>Revisa antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.map((item) => `<article class="bank-preview-row${item.duplicate ? " is-duplicate" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)}${item.reference ? ` · ${escapeHtml(item.reference)}` : ""}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.duplicate ? "Duplicado" : "Nuevo"}</span></article>`).join("")}${bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Revisar</span></article>`).join("")}</div><aside class="info-note info-note--warning"><p><strong>Aún no se ha importado nada.</strong> La confirmación y conciliación se habilitarán después de validar el formato de cada banco.</p></aside></section>` : `<section class="panel bank-empty"><p class="section-kicker">Importación manual</p><h2>Revisa el extracto antes de guardarlo</h2><p>Selecciona un CSV o prueba con movimientos ficticios. La aplicación detecta columnas, normaliza los importes y separa duplicados sin tocar la cuenta.</p><div class="page-actions"><label class="secondary-button file-button">Elegir CSV<input type="file" accept=".csv,text/csv" data-bank-file></label><button class="primary-button" type="button" data-bank-demo>Probar con datos ficticios</button></div></section>`;
+  const summary = bankPreview ? `<section class="inline-summary"><div><span>Movimientos válidos</span><strong>${bankPreview.records.length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Filas a revisar</span><strong>${bankPreview.errors.length}</strong></div><div><span>Listos para importar</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div></section><section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización local</p><h3>Revisa antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.map((item) => `<article class="bank-preview-row${item.duplicate ? " is-duplicate" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)}${item.reference ? ` · ${escapeHtml(item.reference)}` : ""}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.duplicate ? "Duplicado" : "Nuevo"}</span></article>`).join("")}${bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Revisar</span></article>`).join("")}</div><aside class="info-note info-note--warning"><p><strong>Aún no se ha importado nada.</strong> La confirmación y conciliación se habilitarán después de validar el formato de cada banco.</p></aside></section>` : `<section class="panel bank-empty"><p class="section-kicker">Importación manual</p><h2>Revisa el extracto antes de guardarlo</h2><p>Selecciona un .xls, .xlsx o CSV. Buscaremos la fila de encabezados del banco, normalizaremos los importes y separaremos duplicados sin tocar la cuenta.</p><div class="page-actions"><label class="secondary-button file-button">Elegir extracto<input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label><button class="primary-button" type="button" data-bank-demo>Probar con datos ficticios</button></div></section>`;
   return `${summary}<aside class="info-note">${icon("bank")}<p><strong>Banco trabaja siempre con previsualización.</strong> Nunca se guardará un extracto sin que administración lo confirme.</p></aside>`;
 }
 
@@ -329,13 +329,31 @@ function parseCsvLine(line, delimiter) {
   return values;
 }
 
+function bankHeaderKey(value) {
+  return String(value ?? "").trim().toLocaleLowerCase("es-ES").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+}
+
+function rowsAfterBankHeader(rows) {
+  const headerIndex = rows.findIndex((row) => row.some((value) => bankHeaderKey(value) === "fecha de operacion"));
+  if (headerIndex < 0) throw new Error("No encontramos la fila de encabezados «Fecha de operación».");
+  const headers = rows[headerIndex].map((item) => String(item ?? "").trim());
+  return rows.slice(headerIndex + 1).filter((row) => row.some((value) => String(value ?? "").trim())).map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""])));
+}
+
 function parseCsvFile(text) {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
   if (!lines.length) throw new Error("El archivo está vacío.");
   const delimiter = lines[0].includes(";") ? ";" : ",";
-  const headers = parseCsvLine(lines[0], delimiter).map((item) => item.trim());
-  if (!headers.some(Boolean)) throw new Error("No encontramos las cabeceras del extracto.");
-  return lines.slice(1).map((line) => Object.fromEntries(parseCsvLine(line, delimiter).map((value, index) => [headers[index], value])));
+  return rowsAfterBankHeader(lines.map((line) => parseCsvLine(line, delimiter)));
+}
+
+async function parseBankFile(file) {
+  if (file.name.toLowerCase().endsWith(".csv")) return parseCsvFile(await file.text());
+  if (!globalThis.XLSX) throw new Error("No hemos podido iniciar el lector de Excel.");
+  const workbook = globalThis.XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+  if (!firstSheet) throw new Error("El extracto no contiene ninguna hoja legible.");
+  return rowsAfterBankHeader(globalThis.XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "", raw: false, dateNF: "dd/mm/yyyy" }));
 }
 
 function renderAdministration() {
@@ -1046,8 +1064,8 @@ function bindInteractions() {
   document.querySelector("[data-bank-file]")?.addEventListener("change", async (event) => {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
-    try { createBankPreview(parseCsvFile(await file.text()), file.name); }
-    catch (error) { showToast(error.message || "No hemos podido leer ese CSV."); }
+    try { createBankPreview(await parseBankFile(file), file.name); }
+    catch (error) { showToast(error.message || "No hemos podido leer ese extracto."); }
   });
 }
 

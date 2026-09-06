@@ -1,10 +1,10 @@
 const FIELD_ALIASES = {
-  date: ["fecha", "date", "fecha movimiento", "fecha_operacion", "fecha operación"],
+  date: ["fecha", "date", "fecha movimiento", "fecha_operacion", "fecha operación", "fecha de operación"],
   valueDate: ["fecha valor", "fecha_valor", "value date"],
   concept: ["concepto", "concept", "descripción", "descripcion", "description", "detalle"],
   amount: ["importe", "amount", "movimiento", "cantidad"],
   balance: ["saldo", "balance", "saldo disponible"],
-  reference: ["referencia", "reference", "ref", "nº referencia", "numero referencia"]
+  reference: ["referencia", "reference", "ref", "nº referencia", "numero referencia", "nº mov", "nº movimiento", "numero mov", "número mov"]
 };
 
 function key(value) {
@@ -135,4 +135,3 @@ export function detectBankDuplicates(records, existingMovements = []) {
     return { ...record, duplicate, duplicateReason: duplicate ? (existing.has(record.fingerprint) ? "existing" : "repeated") : null };
   });
 }
-
