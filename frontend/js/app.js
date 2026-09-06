@@ -238,11 +238,11 @@ function renderExpenses() {
     </section>
     <section class="list-section assessment-section">
       <div class="list-section__heading"><div><p class="section-kicker">Cargos extraordinarios</p><h3>Derramas</h3></div><span class="help-label">Solo afectan a las familias elegidas</span></div>
-      <div class="assessment-grid">${(data.assessments ?? []).length ? data.assessments.map((assessment) => `<article class="assessment-card"><span class="assessment-card__icon">${icon("people")}</span><div><strong>${escapeHtml(assessment.concept)}</strong><small>${formatDate(assessment.date)} · ${assessment.allocations.length} ${assessment.allocations.length === 1 ? "familia" : "familias"}</small><span>${assessment.allocations.map((item) => escapeHtml(familyName(item.familyId))).join(" · ")}</span></div><strong>${formatMoney(assessment.totalAmountCents)}</strong></article>`).join("") : `<div class="empty-list"><strong>No hay derramas.</strong><span>Los gastos ordinarios no se reparten automáticamente.</span></div>`}</div>
+      <div class="assessment-grid">${(data.assessments ?? []).length ? data.assessments.map((assessment) => `<article class="assessment-card"><span class="assessment-card__icon">${icon("people")}</span><div><strong>${escapeHtml(assessment.concept)}</strong><small>${formatDate(assessment.date)} · ${assessment.allocations.length} ${assessment.allocations.length === 1 ? "familia" : "familias"}</small><span>${assessment.allocations.map((item) => escapeHtml(familyName(item.familyId))).join(" · ")}</span></div><div class="record-actions"><strong>${formatMoney(assessment.totalAmountCents)}</strong><button class="text-link" type="button" data-edit-assessment="${escapeHtml(assessment.id)}">Editar</button></div></article>`).join("") : `<div class="empty-list"><strong>No hay derramas.</strong><span>Los gastos ordinarios no se reparten automáticamente.</span></div>`}</div>
     </section>
     <section class="list-section">
       <div class="list-section__heading"><div><p class="section-kicker">Movimientos recientes</p><h3>Últimos gastos</h3></div><div class="filter-chips" aria-label="Filtrar gastos">${categories.map((category) => `<button type="button" class="filter-chip${category === expenseFilter ? " is-active" : ""}" data-expense-filter="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join("")}</div></div>
-      <div class="expense-list">${visibleExpenses.length ? visibleExpenses.map((expense) => `<article class="expense-row"><span class="expense-row__icon">${icon("receipt")}</span><div class="expense-row__main"><strong>${escapeHtml(expense.concept)}</strong><span>${escapeHtml(expense.provider)} · ${escapeHtml(expense.category)}</span><small>${escapeHtml(payerLabel(expense))}</small></div><time datetime="${escapeHtml(expense.date)}">${formatDate(expense.date)}</time><strong class="expense-row__amount">−${formatMoney(expense.amountCents)}</strong></article>`).join("") : `<div class="empty-list"><strong>No hay gastos en esta categoría.</strong><span>Prueba con otro filtro.</span></div>`}</div>
+      <div class="expense-list">${visibleExpenses.length ? visibleExpenses.map((expense) => `<article class="expense-row"><span class="expense-row__icon">${icon("receipt")}</span><div class="expense-row__main"><strong>${escapeHtml(expense.concept)}</strong><span>${escapeHtml(expense.provider)} · ${escapeHtml(expense.category)}</span><small>${escapeHtml(payerLabel(expense))}</small></div><time datetime="${escapeHtml(expense.date)}">${formatDate(expense.date)}</time><div class="record-actions"><strong class="expense-row__amount">−${formatMoney(expense.amountCents)}</strong><button class="text-link" type="button" data-edit-expense="${escapeHtml(expense.id)}">Editar</button></div></article>`).join("") : `<div class="empty-list"><strong>No hay gastos en esta categoría.</strong><span>Prueba con otro filtro.</span></div>`}</div>
     </section>`;
 }
 
@@ -531,37 +531,42 @@ function openFamilyCreateDialog() {
     </form>`);
 }
 
-function openExpenseDialog() {
+function openExpenseDialog(expenseId = null) {
   const categories = data.expenseCategories.map((category) => category.name);
   const families = data.families.filter((family) => family.active);
+  const expense = expenseId ? data.expenses.find((item) => item.id === expenseId) : null;
+  if (expenseId && !expense) return;
   if (!categories.length) {
     showToast("Antes de registrar un gasto, administración debe crear una categoría.");
     return;
   }
-  const saveLabel = authService ? "Guardar gasto" : "Guardar demo";
-  openDialog(`${dialogHeader("Datos de demostración", "Añadir un gasto")}
-    <form class="dialog-form" id="expense-form">
-      <label>Concepto<input name="concept" required maxlength="80" placeholder="Ej. Reparación de la cancela"></label>
-      <div class="form-row"><label>Importe (€)<input name="amount" required inputmode="decimal" placeholder="0,00"></label><label>Fecha<input name="date" required type="date" value="${todayIso()}"></label></div>
-      <label>Categoría<select name="category" required>${categories.map((category) => `<option>${escapeHtml(category)}</option>`).join("")}</select></label>
-      <label>Proveedor<input name="provider" maxlength="80" placeholder="Nombre ficticio"></label>
-      <fieldset class="choice-fieldset"><legend>¿Quién ha pagado?</legend><div class="choice-options"><label><input type="radio" name="paymentSource" value="COMMUNITY" checked><span><strong>Cuenta de la comunidad</strong><small>El dinero sale del banco común.</small></span></label><label><input type="radio" name="paymentSource" value="FAMILIES"><span><strong>Una o varias familias</strong><small>Se añade como saldo a su favor.</small></span></label></div></fieldset>
-      <div class="allocation-editor" data-expense-payers hidden><div class="allocation-editor__heading"><strong>Importe adelantado por cada familia</strong><small>La suma debe coincidir con el gasto.</small></div>${families.map((family) => `<div class="payer-row"><label><input type="checkbox" name="payerFamilyId" value="${escapeHtml(family.id)}"><span>${escapeHtml(family.name)}</span></label><label class="payer-amount"><span class="sr-only">Importe pagado por ${escapeHtml(family.name)}</span><input data-payer-amount data-family-id="${escapeHtml(family.id)}" inputmode="decimal" placeholder="0,00" disabled><small>€</small></label></div>`).join("")}<div class="allocation-check" data-payer-total>Selecciona quién pagó.</div></div>
+  const saveLabel = expense ? "Guardar corrección" : authService ? "Guardar gasto" : "Guardar demo";
+  openDialog(`${dialogHeader(expense ? "Corrección" : "Datos de demostración", expense ? "Editar gasto" : "Añadir un gasto")}
+    <form class="dialog-form" id="expense-form">${expense ? `<input type="hidden" name="id" value="${escapeHtml(expense.id)}">` : ""}
+      <label>Concepto<input name="concept" required maxlength="80" placeholder="Ej. Reparación de la cancela" value="${escapeHtml(expense?.concept ?? "")}"></label>
+      <div class="form-row"><label>Importe (€)<input name="amount" required inputmode="decimal" placeholder="0,00" value="${expense ? centsInputValue(expense.amountCents) : ""}"></label><label>Fecha<input name="date" required type="date" value="${escapeHtml(expense?.date ?? todayIso())}"></label></div>
+      <label>Categoría<select name="category" required>${categories.map((category) => `<option${category === expense?.category ? " selected" : ""}>${escapeHtml(category)}</option>`).join("")}</select></label>
+      <label>Proveedor<input name="provider" maxlength="80" placeholder="Nombre ficticio" value="${escapeHtml(expense?.provider === "Sin proveedor" ? "" : expense?.provider ?? "")}"></label>
+      <fieldset class="choice-fieldset"><legend>¿Quién ha pagado?</legend><div class="choice-options"><label><input type="radio" name="paymentSource" value="COMMUNITY"${expense?.paymentSource !== "FAMILIES" ? " checked" : ""}><span><strong>Cuenta de la comunidad</strong><small>El dinero sale del banco común.</small></span></label><label><input type="radio" name="paymentSource" value="FAMILIES"${expense?.paymentSource === "FAMILIES" ? " checked" : ""}><span><strong>Una o varias familias</strong><small>Se añade como saldo a su favor.</small></span></label></div></fieldset>
+      <div class="allocation-editor" data-expense-payers${expense?.paymentSource === "FAMILIES" ? "" : " hidden"}><div class="allocation-editor__heading"><strong>Importe adelantado por cada familia</strong><small>La suma debe coincidir con el gasto.</small></div>${families.map((family) => { const payer = expense?.payers?.find((item) => item.familyId === family.id); return `<div class="payer-row"><label><input type="checkbox" name="payerFamilyId" value="${escapeHtml(family.id)}"${payer ? " checked" : ""}><span>${escapeHtml(family.name)}</span></label><label class="payer-amount"><span class="sr-only">Importe pagado por ${escapeHtml(family.name)}</span><input data-payer-amount data-family-id="${escapeHtml(family.id)}" inputmode="decimal" placeholder="0,00" value="${payer ? centsInputValue(payer.amountCents) : ""}"${payer ? "" : " disabled"}><small>€</small></label></div>`; }).join("")}<div class="allocation-check" data-payer-total>Selecciona quién pagó.</div></div>
       <p class="form-error" role="alert" hidden></p>
       <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">${saveLabel}</button></div>
     </form>`);
 }
 
-function openAssessmentDialog() {
+function openAssessmentDialog(assessmentId = null) {
   const families = data.families.filter((family) => family.active);
-  openDialog(`${dialogHeader("Cargo extraordinario", "Nueva derrama")}
-    <form class="dialog-form" id="assessment-form">
-      <label>Concepto<input name="concept" required maxlength="100" placeholder="Ej. Reparación de la zona norte"></label>
-      <div class="form-row"><label>Importe total (€)<input name="amount" required inputmode="decimal" placeholder="0,00"></label><label>Fecha<input name="date" required type="date" value="${todayIso()}"></label></div>
-      <fieldset class="allocation-editor"><legend>¿A qué familias se aplica?</legend><p>Se repartirá por igual solo entre las seleccionadas.</p>${families.map((family) => `<label class="assessment-family"><input type="checkbox" name="assessmentFamilyId" value="${escapeHtml(family.id)}" checked><span><strong>${escapeHtml(family.name)}</strong><small data-assessment-share="${escapeHtml(family.id)}">Importe por calcular</small></span></label>`).join("")}</fieldset>
+  const assessment = assessmentId ? data.assessments.find((item) => item.id === assessmentId) : null;
+  if (assessmentId && !assessment) return;
+  const selectedIds = new Set(assessment?.allocations?.map((item) => item.familyId) ?? families.map((family) => family.id));
+  openDialog(`${dialogHeader(assessment ? "Corrección" : "Cargo extraordinario", assessment ? "Editar derrama" : "Nueva derrama")}
+    <form class="dialog-form" id="assessment-form">${assessment ? `<input type="hidden" name="id" value="${escapeHtml(assessment.id)}">` : ""}
+      <label>Concepto<input name="concept" required maxlength="100" placeholder="Ej. Reparación de la zona norte" value="${escapeHtml(assessment?.concept ?? "")}"></label>
+      <div class="form-row"><label>Importe total (€)<input name="amount" required inputmode="decimal" placeholder="0,00" value="${assessment ? centsInputValue(assessment.totalAmountCents) : ""}"></label><label>Fecha<input name="date" required type="date" value="${escapeHtml(assessment?.date ?? todayIso())}"></label></div>
+      <fieldset class="allocation-editor"><legend>¿A qué familias se aplica?</legend><p>Se repartirá por igual solo entre las seleccionadas.</p>${families.map((family) => `<label class="assessment-family"><input type="checkbox" name="assessmentFamilyId" value="${escapeHtml(family.id)}"${selectedIds.has(family.id) ? " checked" : ""}><span><strong>${escapeHtml(family.name)}</strong><small data-assessment-share="${escapeHtml(family.id)}">Importe por calcular</small></span></label>`).join("")}</fieldset>
       <div class="quota-calculation"><span>Reparto previsto</span><strong data-assessment-preview>Indica el importe</strong><small data-assessment-families>${families.length} familias seleccionadas</small></div>
       <p class="form-error" role="alert" hidden></p>
-      <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">Crear derrama demo</button></div>
+      <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancelar</button><button class="primary-button" type="submit">${assessment ? "Guardar corrección" : authService ? "Crear derrama" : "Crear derrama demo"}</button></div>
     </form>`);
 }
 
@@ -885,22 +890,27 @@ function bindDialogInteractions() {
     submitButton.textContent = "Guardando…";
     event.currentTarget.setAttribute("aria-busy", "true");
     try {
-      const created = await service.createExpense({ concept: form.get("concept").trim(), amountCents, date: form.get("date"), category: form.get("category"), provider: form.get("provider").trim() || "Sin proveedor", paymentSource, payers, notes: "" });
-      data.expenses.unshift(created);
-      data.community.yearlyExpensesCents += created.amountCents;
-      if (created.paymentSource === "COMMUNITY") data.community.currentBalanceCents -= created.amountCents;
-      const category = data.expenseCategories.find((item) => item.name === created.category);
-      if (category) category.amountCents += created.amountCents;
+      const payload = { id: form.get("id") || undefined, concept: form.get("concept").trim(), amountCents, date: form.get("date"), category: form.get("category"), provider: form.get("provider").trim() || "Sin proveedor", paymentSource, payers, notes: "" };
+      const editing = Boolean(payload.id);
+      const created = editing ? await service.updateExpense(payload) : await service.createExpense(payload);
+      if (editing) data = await service.getSnapshot();
+      else {
+        data.expenses.unshift(created);
+        data.community.yearlyExpensesCents += created.amountCents;
+        if (created.paymentSource === "COMMUNITY") data.community.currentBalanceCents -= created.amountCents;
+        const category = data.expenseCategories.find((item) => item.name === created.category);
+        if (category) category.amountCents += created.amountCents;
+      }
       dialog.close();
       expenseFilter = "Todas";
       renderRoute();
-      showToast(authService ? "Gasto guardado correctamente." : "Gasto añadido a la demostración. Se borrará al recargar.");
+      showToast(editing ? "Gasto corregido correctamente." : authService ? "Gasto guardado correctamente." : "Gasto añadido a la demostración. Se borrará al recargar.");
     } catch (saveError) {
       console.error(saveError);
       error.textContent = "No hemos podido guardar el gasto. Comprueba la conexión y vuelve a intentarlo.";
       error.hidden = false;
       submitButton.disabled = false;
-      submitButton.textContent = authService ? "Guardar gasto" : "Guardar demo";
+      submitButton.textContent = form.get("id") ? "Guardar corrección" : authService ? "Guardar gasto" : "Guardar demo";
       event.currentTarget.removeAttribute("aria-busy");
     }
   });
@@ -920,17 +930,20 @@ function bindDialogInteractions() {
     submitButton.disabled = true;
     submitButton.textContent = "Creando…";
     try {
-      const created = await service.createAssessment({ concept: form.get("concept").trim(), date: form.get("date"), totalAmountCents, allocations: splitCentsEvenly(totalAmountCents, familyIds), notes: "" });
-      data.assessments.unshift(created);
+      const payload = { id: form.get("id") || undefined, concept: form.get("concept").trim(), date: form.get("date"), totalAmountCents, allocations: splitCentsEvenly(totalAmountCents, familyIds), notes: "" };
+      const editing = Boolean(payload.id);
+      const created = editing ? await service.updateAssessment(payload) : await service.createAssessment(payload);
+      if (editing) data = await service.getSnapshot();
+      else data.assessments.unshift(created);
       dialog.close();
       renderRoute();
-      showToast("Derrama creada. Ya aparece en el saldo de las familias seleccionadas.");
+      showToast(editing ? "Derrama corregida correctamente." : "Derrama creada. Ya aparece en el saldo de las familias seleccionadas.");
     } catch (saveError) {
       console.error(saveError);
       error.textContent = "No hemos podido crear la derrama. Revisa los datos y vuelve a intentarlo.";
       error.hidden = false;
       submitButton.disabled = false;
-      submitButton.textContent = "Crear derrama demo";
+      submitButton.textContent = form.get("id") ? "Guardar corrección" : authService ? "Crear derrama" : "Crear derrama demo";
     }
   });
 
@@ -1022,6 +1035,8 @@ function bindInteractions() {
   document.querySelector("[data-open-water-tariff]")?.addEventListener("click", openWaterTariffDialog);
   document.querySelector("[data-open-expense]")?.addEventListener("click", openExpenseDialog);
   document.querySelector("[data-open-assessment]")?.addEventListener("click", openAssessmentDialog);
+  document.querySelectorAll("[data-edit-expense]").forEach((button) => button.addEventListener("click", () => openExpenseDialog(button.dataset.editExpense)));
+  document.querySelectorAll("[data-edit-assessment]").forEach((button) => button.addEventListener("click", () => openAssessmentDialog(button.dataset.editAssessment)));
   document.querySelector("[data-open-water]")?.addEventListener("click", () => openWaterDialog());
   document.querySelector("[data-open-water-settlement]")?.addEventListener("click", openWaterSettlementDialog);
   document.querySelectorAll("[data-water-history]").forEach((button) => button.addEventListener("click", () => openWaterHistoryDialog(button.dataset.waterHistory)));

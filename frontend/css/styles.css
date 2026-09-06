@@ -208,6 +208,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .expense-row__main span, .expense-row time { color: var(--muted); font-size: .72rem; }
 .expense-row__main small { margin-top: 3px; color: var(--forest-700); font-size: .68rem; }
 .expense-row__amount { text-align: right; font-family: var(--font-display); color: #884533; }
+.record-actions { display: grid; justify-items: end; gap: 3px; white-space: nowrap; }
+.record-actions > strong { font-family: var(--font-display); }
+.record-actions .text-link { padding: 2px 0; font-size: .68rem; }
 .assessment-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .assessment-card { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 13px; min-height: 92px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
 .assessment-card__icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: var(--forest-100); color: var(--forest-700); }
