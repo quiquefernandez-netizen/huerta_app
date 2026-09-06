@@ -383,6 +383,9 @@ function renderTopbar(route) {
     const canSettle = isAdministrator() && settlement && settlement.totalUsageM3 > 0;
     actions = `${readings.length ? `<button class="secondary-button" type="button" data-open-water aria-label="Nueva lectura">${icon("plus")}<span class="action-label">Nueva lectura</span></button>` : ""}${isAdministrator() ? `<button class="primary-button" type="button" data-open-water-settlement aria-label="Liquidar agua"${canSettle ? "" : " disabled"}>${icon("coins")}<span class="action-label">Liquidar agua</span></button>` : ""}`;
   }
+  if (isAdministrator() && route.id === "banco") {
+    actions = `<label class="primary-button file-button" aria-label="Añadir extracto">${icon("plus")} ${icon("excel")}<span class="action-label">Añadir</span><input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label>`;
+  }
   document.querySelector("#page-title").textContent = route.label;
   document.querySelector("#page-context").textContent = contexts[route.id] ?? "Sección de la comunidad";
   document.querySelector("#topbar-actions").innerHTML = actions;

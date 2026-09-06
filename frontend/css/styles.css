@@ -60,7 +60,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .admin-grid h2 { margin: 3px 0 8px; font-family: var(--font-display); font-size: 1.35rem; }
 .admin-grid p:not(.section-kicker) { color: var(--muted); font-size: .82rem; }
 .admin-grid .page-actions { margin-top: 20px; }
-.bank-empty { max-width: 720px; }
+.bank-empty { display: none; }
 .bank-empty h2 { font-family: var(--font-display); }
 .file-button { position: relative; overflow: hidden; cursor: pointer; }
 .file-button input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
