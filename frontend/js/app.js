@@ -1112,16 +1112,21 @@ function bindInteractions() {
     try { await createBankPreview(await parseBankFile(file), file.name); }
     catch (error) { showToast(error.message || "No hemos podido leer ese extracto."); }
   });
-  document.querySelector("[data-confirm-bank-import]")?.addEventListener("click", async (event) => {
+  document.querySelectorAll("[data-confirm-bank-import]").forEach((button) => button.addEventListener("click", async (event) => {
     if (!bankPreview) return;
     const button = event.currentTarget;
     button.disabled = true; button.textContent = "Importando…";
     try {
       const result = await service.importBankMovements({ source: bankPreview.records[0]?.source ?? "extracto", rows: bankPreview.records.filter((item) => !item.duplicate) });
+      data = await service.getSnapshot();
+      for (const record of bankPreview.records.filter((item) => !item.duplicate && item.assignment?.startsWith("FAMILY:"))) {
+        const movement = data.bankMovements.find((item) => item.fingerprint === record.fingerprint);
+        if (movement) await service.assignBankMovement({ id: movement.id, familyId: record.assignment.slice(7) });
+      }
       data = await service.getSnapshot(); bankPreview = null; renderRoute();
       showToast(`${result.imported} movimientos importados; ${result.duplicates} duplicados omitidos.`);
     } catch (error) { button.disabled = false; button.textContent = "Confirmar importación"; showToast("No hemos podido importar el extracto. Comprueba que eres administrador."); }
-  });
+  }));
   document.querySelectorAll("[data-bank-assignment]").forEach((select) => select.addEventListener("change", () => {
     const record = bankPreview?.records.filter((item) => !item.duplicate)[Number(select.dataset.bankAssignment)];
     if (record) record.assignment = select.value;
