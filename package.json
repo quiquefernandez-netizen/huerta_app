@@ -13,5 +13,8 @@
   },
   "devDependencies": {
     "supabase": "^2.116.0"
+  },
+  "dependencies": {
+    "xlsx": "^0.18.5"
   }
 }
