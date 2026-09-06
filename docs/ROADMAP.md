@@ -22,6 +22,11 @@
 - Demo de cuota anual configurable, aportaciones individuales y liquidación de agua por lote.
 - Cuenta corriente familiar demo con compensación de cuotas, agua, derramas y gastos adelantados.
 - Alta demo de gastos pagados desde la cuenta común o por varias familias y creación de derramas selectivas.
+- Corrección de gastos y derramas para ambos perfiles, con validación de reparto exacto y sin eliminación.
+- Corrección de lecturas no liquidadas; las lecturas liquidadas quedan protegidas en servidor.
+- Configuración centralizada en Administración: cuota anual por ejercicio y tarifa de agua versionada.
+- Protección del histórico: no se pueden modificar cuotas de ejercicios ya cerrados.
+- Inicio de Fase 2: pantalla Banco con CSV, normalización local, fingerprint y detección de duplicados sin importar ningún movimiento.
 - Manifest inicial para evolución futura a PWA.
 
 ### Pendiente dentro de Fase 1
@@ -30,15 +35,13 @@
 - Crear una pantalla administrativa para altas y revocación de credenciales; la base de datos ya permite varias.
 
 - Revisión visual con Dani y aplicación de su dirección definitiva.
-- Aplicar las migraciones y el seed ficticio en el proyecto Supabase remoto después de revisar que esté vacío.
 - Desplegar `unlock-access`, configurar sus orígenes y habilitar Anonymous Sign-Ins.
-- Persistir familias, cuotas, aportaciones, gastos y agua.
 - Probar ambos accesos, persistencia, caducidad y revocación contra el proyecto remoto.
 - Completar casos de error de red contra un backend real.
 
 ## Fase 2 — banco
 
-Importación XLSX/CSV, previsualización, duplicados, conciliación determinista, reglas aprendidas, pendientes e histórico/reversión de importaciones.
+Completar importación XLSX/CSV con confirmación, persistencia de lotes, duplicados contra datos ya importados, conciliación determinista, reglas aprendidas, pendientes e histórico/reversión de importaciones. La primera previsualización CSV ya está disponible, pero no guarda datos todavía.
 
 ## Fase 3 — vida comunitaria
 
