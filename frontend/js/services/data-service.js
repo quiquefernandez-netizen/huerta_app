@@ -32,11 +32,37 @@ export class DemoDataService {
     return clone(created);
   }
 
+  async updateExpense(expense) {
+    await delay(240);
+    const index = this.data.expenses.findIndex((item) => item.id === expense.id);
+    if (index < 0) throw new Error("El gasto no existe.");
+    const previous = this.data.expenses[index];
+    const updated = { paymentSource: "COMMUNITY", payers: [], ...clone(previous), ...clone(expense) };
+    this.data.community.yearlyExpensesCents += updated.amountCents - previous.amountCents;
+    if (previous.paymentSource === "COMMUNITY") this.data.community.currentBalanceCents += previous.amountCents;
+    if (updated.paymentSource === "COMMUNITY") this.data.community.currentBalanceCents -= updated.amountCents;
+    const oldCategory = this.data.expenseCategories.find((item) => item.name === previous.category);
+    const newCategory = this.data.expenseCategories.find((item) => item.name === updated.category);
+    if (oldCategory) oldCategory.amountCents -= previous.amountCents;
+    if (newCategory) newCategory.amountCents += updated.amountCents;
+    this.data.expenses[index] = updated;
+    return clone(updated);
+  }
+
   async createAssessment(assessment) {
     await delay(280);
     const created = { ...clone(assessment), id: `der_demo_${crypto.randomUUID()}`, status: "ACTIVA" };
     this.data.assessments.unshift(created);
     return clone(created);
+  }
+
+  async updateAssessment(assessment) {
+    await delay(280);
+    const index = this.data.assessments.findIndex((item) => item.id === assessment.id);
+    if (index < 0) throw new Error("La derrama no existe.");
+    const updated = { ...clone(this.data.assessments[index]), ...clone(assessment) };
+    this.data.assessments[index] = updated;
+    return clone(updated);
   }
 
   async createWaterReading(reading) {
@@ -160,8 +186,33 @@ export class SupabaseDataService {
     });
   }
 
+  updateExpense(expense) {
+    return this.rpc("update_expense", {
+      p_expense_id: expense.id,
+      p_spent_at: expense.date,
+      p_concept: expense.concept,
+      p_amount_cents: expense.amountCents,
+      p_category_name: expense.category,
+      p_provider: expense.provider,
+      p_notes: expense.notes,
+      p_payment_source: expense.paymentSource ?? "COMMUNITY",
+      p_payers: expense.payers ?? []
+    });
+  }
+
   createAssessment(assessment) {
     return this.rpc("create_assessment", {
+      p_concept: assessment.concept,
+      p_assessed_at: assessment.date,
+      p_total_amount_cents: assessment.totalAmountCents,
+      p_allocations: assessment.allocations,
+      p_notes: assessment.notes
+    });
+  }
+
+  updateAssessment(assessment) {
+    return this.rpc("update_assessment", {
+      p_assessment_id: assessment.id,
       p_concept: assessment.concept,
       p_assessed_at: assessment.date,
       p_total_amount_cents: assessment.totalAmountCents,

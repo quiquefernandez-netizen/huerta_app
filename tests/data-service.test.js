@@ -112,6 +112,25 @@ test("un gasto adelantado por familias no reduce el saldo bancario", async () =>
   assert.equal(after.community.yearlyExpensesCents, before.community.yearlyExpensesCents + 5000);
 });
 
+test("el servicio demo permite corregir un gasto sin cambiar su identidad", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const original = before.expenses[0];
+  const updated = await service.updateExpense({ ...original, amountCents: original.amountCents + 100, concept: "Corrección ficticia" });
+  const after = await service.getSnapshot();
+  assert.equal(updated.id, original.id);
+  assert.equal(after.expenses.find((item) => item.id === original.id).amountCents, original.amountCents + 100);
+});
+
+test("el servicio demo permite corregir el reparto de una derrama", async () => {
+  const service = new DemoDataService();
+  const before = await service.getSnapshot();
+  const original = before.assessments[0];
+  const updated = await service.updateAssessment({ ...original, totalAmountCents: 9000, allocations: [{ familyId: "fam_roble", amountCents: 9000 }] });
+  assert.equal(updated.id, original.id);
+  assert.deepEqual(updated.allocations, [{ familyId: "fam_roble", amountCents: 9000 }]);
+});
+
 test("una derrama conserva el reparto entre las familias elegidas", async () => {
   const service = new DemoDataService();
   const before = await service.getSnapshot();
@@ -147,6 +166,19 @@ test("el adaptador Supabase envía RPC con clave pública y sesión, nunca secre
     p_payment_source: "COMMUNITY",
     p_payers: []
   });
+});
+
+test("el adaptador Supabase usa RPC protegidas para corregir gastos y derramas", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
+    getAccessToken: async () => "jwt-demo",
+    fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => ({ id: "demo" }) }; }
+  });
+  await service.updateExpense({ id: "gasto-1", date: "2026-09-05", concept: "Gasto corregido", amountCents: 1200, category: "Otros", provider: "Demo", notes: "", paymentSource: "COMMUNITY", payers: [] });
+  await service.updateAssessment({ id: "derrama-1", date: "2026-09-05", concept: "Derrama corregida", totalAmountCents: 1200, allocations: [{ familyId: "fam-1", amountCents: 1200 }], notes: "" });
+  assert.equal(calls[0].url, "https://demo.supabase.co/rest/v1/rpc/update_expense");
+  assert.equal(calls[1].url, "https://demo.supabase.co/rest/v1/rpc/update_assessment");
+  assert.equal(JSON.parse(calls[1].options.body).p_assessment_id, "derrama-1");
 });
 
 test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {
