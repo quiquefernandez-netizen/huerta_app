@@ -137,15 +137,38 @@ export class DemoDataService {
       known.add(row.fingerprint);
       imported.push(movement);
     }
+    const batchId = `batch_demo_${crypto.randomUUID()}`;
+    imported.forEach((movement) => { movement.batchId = batchId; });
     this.data.bankMovements = [...imported, ...(this.data.bankMovements ?? [])];
-    return { batchId: `batch_demo_${crypto.randomUUID()}`, source, rows: (rows ?? []).length, imported: imported.length, duplicates };
+    this.data.bankImportBatches = [{ id: batchId, source, rowCount: (rows ?? []).length, importedCount: imported.length, duplicateCount: duplicates, createdAt: new Date().toISOString() }, ...(this.data.bankImportBatches ?? [])];
+    return { batchId, source, rows: (rows ?? []).length, imported: imported.length, duplicates };
+  }
+
+  async revertBankImport(batchId) {
+    await delay(220);
+    const movementIds = new Set((this.data.bankMovements ?? []).filter((item) => item.batchId === batchId).map((item) => item.id));
+    const removed = movementIds.size;
+    this.data.contributions = (this.data.contributions ?? []).filter((item) => !movementIds.has(item.bankMovementId));
+    this.data.expenses = (this.data.expenses ?? []).filter((item) => !movementIds.has(item.bankMovementId) || !item.createdFromBank);
+    this.data.bankMovements = (this.data.bankMovements ?? []).filter((item) => item.batchId !== batchId);
+    this.data.bankImportBatches = (this.data.bankImportBatches ?? []).filter((item) => item.id !== batchId);
+    return { batchId, removed };
   }
 
   async assignBankMovement({ id, familyId = null, expenseId = null, categoryName = null, notes = "" }) {
     await delay(180);
     const movement = (this.data.bankMovements ?? []).find((item) => item.id === id);
     if (!movement) throw new Error("El movimiento bancario no existe.");
-    Object.assign(movement, { familyId, expenseId, categoryName, notes, assignmentStatus: familyId || expenseId || categoryName ? "ASIGNADO" : "PENDIENTE" });
+    this.data.contributions = (this.data.contributions ?? []).filter((item) => item.bankMovementId !== id);
+    this.data.expenses = (this.data.expenses ?? []).filter((item) => item.bankMovementId !== id || !item.createdFromBank);
+    let linkedExpenseId = expenseId;
+    if (familyId) {
+      this.data.contributions.unshift({ id: `apo_bank_${id}`, familyId, date: movement.date, amountCents: movement.amountCents, concept: movement.concept, bankMovementId: id, createdFromBank: true });
+    } else if (categoryName) {
+      linkedExpenseId = `gas_bank_${id}`;
+      this.data.expenses.unshift({ id: linkedExpenseId, date: movement.date, concept: movement.concept, amountCents: Math.abs(movement.amountCents), category: categoryName, provider: "Extracto bancario", paymentSource: "COMMUNITY", payers: [], notes, bankMovementId: id, createdFromBank: true });
+    }
+    Object.assign(movement, { familyId, expenseId: linkedExpenseId, categoryName, notes, assignmentStatus: familyId || linkedExpenseId ? "ASIGNADO" : "PENDIENTE" });
     return clone(movement);
   }
 
@@ -159,6 +182,32 @@ export class DemoDataService {
     const created = { ...clone(rule), id: `rule_demo_${crypto.randomUUID()}`, active: true, priority: rule.priority ?? 100 };
     this.data.reconciliationRules = [created, ...(this.data.reconciliationRules ?? [])];
     return clone(created);
+  }
+
+  async updateReconciliationRule(rule) {
+    await delay(180);
+    const index = (this.data.reconciliationRules ?? []).findIndex((item) => item.id === rule.id);
+    if (index < 0) throw new Error("La regla no existe.");
+    this.data.reconciliationRules[index] = { ...this.data.reconciliationRules[index], ...clone(rule) };
+    return clone(this.data.reconciliationRules[index]);
+  }
+
+  async applyReconciliationRules() {
+    const normalize = (value) => String(value ?? "").trim().toLocaleLowerCase("es-ES").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let assigned = 0;
+    const rules = [...(this.data.reconciliationRules ?? [])].filter((rule) => rule.active).sort((a, b) => a.priority - b.priority || b.pattern.length - a.pattern.length);
+    for (const movement of (this.data.bankMovements ?? []).filter((item) => item.assignmentStatus === "PENDIENTE")) {
+      const concept = normalize(movement.concept);
+      const rule = rules.find((item) => {
+        const pattern = normalize(item.pattern);
+        const matches = item.matchType === "EXACT" ? concept === pattern : concept.includes(pattern);
+        return matches && ((movement.amountCents > 0 && item.familyId) || (movement.amountCents < 0 && item.categoryName));
+      });
+      if (!rule) continue;
+      await this.assignBankMovement({ id: movement.id, familyId: rule.familyId ?? null, categoryName: rule.categoryName ?? null, notes: "Asignado por regla" });
+      assigned += 1;
+    }
+    return { assigned };
   }
 
   async setReconciliationRuleActive(id, active) {
@@ -326,6 +375,8 @@ export class SupabaseDataService {
     return this.rpc("import_bank_movements", { p_source: source, p_rows: rows });
   }
 
+  revertBankImport(batchId) { return this.rpc("revert_bank_import", { p_batch_id: batchId }); }
+
   assignBankMovement({ id, familyId = null, expenseId = null, categoryName = null, notes = "" }) {
     return this.rpc("assign_bank_movement", { p_id: id, p_family_id: familyId, p_expense_id: expenseId, p_category_name: categoryName, p_notes: notes });
   }
@@ -338,10 +389,25 @@ export class SupabaseDataService {
       p_match_type: rule.matchType ?? "CONTAINS",
       p_family_id: rule.familyId ?? null,
       p_category_id: rule.categoryId ?? null,
+      p_category_name: rule.categoryName ?? null,
       p_priority: rule.priority ?? 100,
       p_notes: rule.notes ?? null
     });
   }
+
+  updateReconciliationRule(rule) {
+    return this.rpc("update_reconciliation_rule", {
+      p_id: rule.id,
+      p_pattern: rule.pattern,
+      p_match_type: rule.matchType ?? "CONTAINS",
+      p_family_id: rule.familyId ?? null,
+      p_category_id: rule.categoryId ?? null,
+      p_category_name: rule.categoryName ?? null,
+      p_priority: rule.priority ?? 100
+    });
+  }
+
+  applyReconciliationRules() { return this.rpc("apply_reconciliation_rules"); }
 
   setReconciliationRuleActive(id, active) {
     return this.rpc("set_reconciliation_rule_active", { p_id: id, p_active: active });

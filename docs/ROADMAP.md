@@ -26,7 +26,10 @@
 - Corrección de lecturas no liquidadas; las lecturas liquidadas quedan protegidas en servidor.
 - Configuración centralizada en Administración: cuota anual por ejercicio y tarifa de agua versionada.
 - Protección del histórico: no se pueden modificar cuotas de ejercicios ya cerrados.
-- Inicio de Fase 2: pantalla Banco con CSV, normalización local, fingerprint y detección de duplicados sin importar ningún movimiento.
+- Módulo Banco con lectura XLS/XLSX/CSV, localización automática de cabecera, previsualización y confirmación explícita.
+- Importaciones agrupadas, duplicados validados en cliente y servidor, histórico y reversión segura.
+- Conciliación editable de movimientos importados con creación automática de aportaciones y gastos.
+- Reglas deterministas configurables desde Administración, aplicables tanto en la previsualización como a movimientos pendientes.
 - Manifest inicial para evolución futura a PWA.
 
 ### Pendiente dentro de Fase 1
@@ -41,7 +44,7 @@
 
 ## Fase 2 — banco
 
-Completar importación XLSX/CSV con confirmación, persistencia de lotes, duplicados contra datos ya importados, conciliación determinista, reglas aprendidas, pendientes e histórico/reversión de importaciones. La primera previsualización CSV ya está disponible, pero no guarda datos todavía.
+El flujo principal está completado: importación XLS/XLSX/CSV, previsualización, idempotencia, persistencia por lotes, conciliación, reglas, bandeja de pendientes, edición posterior e histórico/reversión. Quedan para una iteración posterior los refinamientos que surjan al validar más formatos reales de extracto y una pantalla de detalle de auditoría por lote.
 
 ## Fase 3 — vida comunitaria
 

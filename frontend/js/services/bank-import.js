@@ -82,9 +82,8 @@ function fnv1a(text) {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
-export function fingerprintBankMovement(movement, { source = "generic" } = {}) {
+export function fingerprintBankMovement(movement) {
   const canonical = [
-    key(source),
     movement.date,
     movement.valueDate ?? "",
     movement.amountCents,
@@ -111,7 +110,7 @@ export function normalizeBankRow(row, { source = "generic", rowNumber = null } =
     reference: cleanText(valueFor(row, "reference")) || null,
     source: cleanText(source) || "generic"
   };
-  return { ...movement, fingerprint: fingerprintBankMovement(movement, { source }), rowNumber };
+  return { ...movement, fingerprint: fingerprintBankMovement(movement), rowNumber };
 }
 
 export function normalizeBankRows(rows, options = {}) {
@@ -128,10 +127,14 @@ export function normalizeBankRows(rows, options = {}) {
 
 export function detectBankDuplicates(records, existingMovements = []) {
   const existing = new Set(existingMovements.map((movement) => movement.fingerprint).filter(Boolean));
+  const identity = (movement) => [movement.date, movement.valueDate ?? "", movement.amountCents, movement.balanceCents ?? "", canonicalText(movement.reference), canonicalText(movement.concept)].join("|");
+  const existingIdentities = new Set(existingMovements.map(identity));
   const seen = new Set();
   return records.map((record) => {
-    const duplicate = existing.has(record.fingerprint) || seen.has(record.fingerprint);
-    seen.add(record.fingerprint);
-    return { ...record, duplicate, duplicateReason: duplicate ? (existing.has(record.fingerprint) ? "existing" : "repeated") : null };
+    const recordIdentity = identity(record);
+    const exists = existing.has(record.fingerprint) || existingIdentities.has(recordIdentity);
+    const duplicate = exists || seen.has(recordIdentity);
+    seen.add(recordIdentity);
+    return { ...record, duplicate, duplicateReason: duplicate ? (exists ? "existing" : "repeated") : null };
   });
 }

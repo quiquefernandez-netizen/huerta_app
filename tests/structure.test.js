@@ -66,6 +66,23 @@ test("los movimientos bancarios guardados se pueden revisar y volver a editar", 
   assert.match(migration, /create function public\.assign_bank_movement/);
 });
 
+test("Banco ofrece un único flujo de preview, filtros, reglas e histórico reversible", async () => {
+  const app = await readFile(new URL("../frontend/js/app.js", import.meta.url), "utf8");
+  const reconciliation = await readFile(new URL("../supabase/migrations/023_complete_bank_reconciliation.sql", import.meta.url), "utf8");
+  const history = await readFile(new URL("../supabase/migrations/024_bank_import_history.sql", import.meta.url), "utf8");
+  const integrity = await readFile(new URL("../supabase/migrations/025_bank_integrity.sql", import.meta.url), "utf8");
+  assert.match(app, /Previsualización y conciliación/);
+  assert.match(app, /Confirmar conciliación e importar/);
+  assert.match(app, /data-bank-filter="pending"/);
+  assert.match(app, /data-revert-bank-import/);
+  assert.match(app, /data-rule-edit/);
+  assert.match(reconciliation, /insert into public\.aportaciones/);
+  assert.match(reconciliation, /insert into public\.gastos/);
+  assert.match(history, /'bankImportBatches'/);
+  assert.match(integrity, /create or replace function public\.import_bank_movements/);
+  assert.match(integrity, /movement\.operation_date = v_operation_date/);
+});
+
 test("los importes de resumen se adaptan a cifras grandes sin salir de la tarjeta", async () => {
   const styles = await readFile(new URL("../frontend/css/styles.css", import.meta.url), "utf8");
   const themes = await readFile(new URL("../frontend/css/themes.css", import.meta.url), "utf8");

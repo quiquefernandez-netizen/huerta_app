@@ -25,6 +25,7 @@ let data;
 let expenseFilter = "Todas";
 let bankPreview = null;
 let bankRules = [];
+let bankMovementFilter = "all";
 
 function icon(name, className = "icon") {
   return `<svg class="${className}" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
@@ -314,25 +315,32 @@ function reconciliationRuleTarget(rule) {
   return category ? `Gasto: ${category.name}` : "Sin destino";
 }
 
-async function openBankRulesDialog() {
+async function openBankRulesDialog(editRuleId = null) {
   if (!isAdministrator()) return;
   try { bankRules = await service.listReconciliationRules(); } catch (error) { showToast(error.message); bankRules = []; }
+  const editingRule = bankRules.find((item) => item.id === editRuleId);
   const familyOptions = data.families.filter((item) => item.active).map((item) => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join("");
-  const categoryOptions = data.expenseCategories.map((item) => `<option value="${escapeHtml(item.id ?? item.name)}">${escapeHtml(item.name)}</option>`).join("");
-  const ruleRows = bankRules.length ? bankRules.map((rule) => `<article class="rule-row${rule.active ? "" : " is-disabled"}"><div><strong>${escapeHtml(rule.pattern)}</strong><small>${escapeHtml(reconciliationRuleTarget(rule))} · ${rule.matchType === "EXACT" ? "Coincidencia exacta" : "Contiene el texto"}</small></div><label class="switch-label"><input type="checkbox" data-rule-toggle="${escapeHtml(rule.id)}"${rule.active ? " checked" : ""}><span>${rule.active ? "Activa" : "Inactiva"}</span></label><button class="icon-button" type="button" data-rule-delete="${escapeHtml(rule.id)}" aria-label="Eliminar regla">${icon("trash")}</button></article>`).join("") : `<p class="empty-copy">Todavía no hay reglas. Añade una para que las próximas previsualizaciones propongan la asignación.</p>`;
-  openDialog(`${dialogHeader("Banco", "Reglas de conciliación")}<p class="form-help">Una regla activa propone automáticamente una familia o categoría cuando el concepto contiene el patrón indicado.</p><div class="rule-list">${ruleRows}</div><form class="dialog-form" id="reconciliation-rule-form"><h3>Nueva regla</h3><label>Texto del concepto<input name="pattern" required minlength="2" placeholder="Ej. IBERDROLA o AEAT"></label><div class="form-row"><label>Destino<select name="targetType"><option value="family">Familia</option><option value="category">Categoría de gasto</option></select></label><label>Coincidencia<select name="matchType"><option value="CONTAINS">Contiene el texto</option><option value="EXACT">Exacta</option></select></label></div><label data-rule-family-field>Familia<select name="familyId"><option value="">Selecciona una familia</option>${familyOptions}</select></label><label data-rule-category-field hidden>Categoría<select name="categoryId"><option value="">Selecciona una categoría</option>${categoryOptions}</select></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions"><button class="primary-button" type="submit">Guardar regla</button></div></form>`);
+  const categoryOptions = data.expenseCategories.map((item) => `<option value="${escapeHtml(item.name)}"${editingRule?.categoryName === item.name ? " selected" : ""}>${escapeHtml(item.name)}</option>`).join("");
+  const ruleRows = bankRules.length ? bankRules.map((rule) => `<article class="rule-row${rule.active ? "" : " is-disabled"}"><div><strong>${escapeHtml(rule.pattern)}</strong><small>${escapeHtml(reconciliationRuleTarget(rule))} · ${rule.matchType === "EXACT" ? "Coincidencia exacta" : "Contiene el texto"}</small></div><label class="switch-label"><input type="checkbox" data-rule-toggle="${escapeHtml(rule.id)}"${rule.active ? " checked" : ""}><span>${rule.active ? "Activa" : "Inactiva"}</span></label><button class="icon-button" type="button" data-rule-edit="${escapeHtml(rule.id)}" aria-label="Editar regla">${icon("settings")}</button><button class="icon-button" type="button" data-rule-delete="${escapeHtml(rule.id)}" aria-label="Eliminar regla">${icon("trash")}</button></article>`).join("") : `<p class="empty-copy">Todavía no hay reglas. Añade una para que las próximas previsualizaciones propongan la asignación.</p>`;
+  const targetType = editingRule?.categoryName ? "category" : "family";
+  const selectedFamilyOptions = familyOptions.replace(`value="${escapeHtml(editingRule?.familyId ?? "")}"`, `value="${escapeHtml(editingRule?.familyId ?? "")}" selected`);
+  openDialog(`${dialogHeader("Banco", "Reglas de conciliación")}<p class="form-help">Una regla activa propone automáticamente una familia o categoría. Las reglas con menor prioridad se prueban primero.</p><div class="rule-list">${ruleRows}</div><form class="dialog-form" id="reconciliation-rule-form"><input type="hidden" name="id" value="${escapeHtml(editingRule?.id ?? "")}"><h3>${editingRule ? "Editar regla" : "Nueva regla"}</h3><label>Texto del concepto<input name="pattern" required minlength="2" placeholder="Ej. IBERDROLA o AEAT" value="${escapeHtml(editingRule?.pattern ?? "")}"></label><div class="form-row"><label>Destino<select name="targetType"><option value="family"${targetType === "family" ? " selected" : ""}>Familia</option><option value="category"${targetType === "category" ? " selected" : ""}>Categoría de gasto</option></select></label><label>Coincidencia<select name="matchType"><option value="CONTAINS"${editingRule?.matchType !== "EXACT" ? " selected" : ""}>Contiene el texto</option><option value="EXACT"${editingRule?.matchType === "EXACT" ? " selected" : ""}>Exacta</option></select></label></div><label data-rule-family-field>Familia<select name="familyId"><option value="">Selecciona una familia</option>${selectedFamilyOptions}</select></label><label data-rule-category-field>Categoría<select name="categoryName"><option value="">Selecciona una categoría</option>${categoryOptions}</select></label><label>Prioridad<input name="priority" type="number" min="0" max="9999" value="${editingRule?.priority ?? 100}"></label><p class="form-error" role="alert" hidden></p><div class="dialog-actions">${editingRule ? `<button class="secondary-button" type="button" data-rule-cancel>Cancelar edición</button>` : ""}<button class="primary-button" type="submit">${editingRule ? "Guardar cambios" : "Guardar regla"}</button></div></form>`);
   const form = document.querySelector("#reconciliation-rule-form");
-  const targetType = form?.querySelector("[name='targetType']");
-  const syncTarget = () => { const family = form.querySelector("[data-rule-family-field]"); const category = form.querySelector("[data-rule-category-field]"); const isFamily = targetType.value === "family"; family.hidden = !isFamily; category.hidden = isFamily; family.querySelector("select").disabled = !isFamily; category.querySelector("select").disabled = isFamily; };
-  targetType?.addEventListener("change", syncTarget); syncTarget();
+  const targetSelect = form?.querySelector("[name='targetType']");
+  const syncTarget = () => { const family = form.querySelector("[data-rule-family-field]"); const category = form.querySelector("[data-rule-category-field]"); const isFamily = targetSelect.value === "family"; family.hidden = !isFamily; category.hidden = isFamily; family.querySelector("select").disabled = !isFamily; category.querySelector("select").disabled = isFamily; };
+  targetSelect?.addEventListener("change", syncTarget); syncTarget();
   form?.addEventListener("submit", async (event) => {
     event.preventDefault(); const values = new FormData(form); const error = form.querySelector(".form-error"); const isFamily = values.get("targetType") === "family";
     try {
-      const categoryId = isFamily ? null : values.get("categoryId");
-      const created = await service.createReconciliationRule({ pattern: values.get("pattern"), matchType: values.get("matchType"), familyId: isFamily ? values.get("familyId") : null, categoryId: categoryId && data.expenseCategories.some((item) => item.id === categoryId) ? categoryId : null, categoryName: categoryId && !data.expenseCategories.some((item) => item.id === categoryId) ? categoryId : null, priority: 100 });
-      bankRules = [created, ...bankRules]; await openBankRulesDialog(); showToast("Regla guardada.");
+      const payload = { id: values.get("id") || undefined, pattern: values.get("pattern"), matchType: values.get("matchType"), familyId: isFamily ? values.get("familyId") : null, categoryId: null, categoryName: isFamily ? null : values.get("categoryName"), priority: Number(values.get("priority")) };
+      if (!payload.familyId && !payload.categoryName) throw new Error("Selecciona el destino de la regla.");
+      if (payload.id) await service.updateReconciliationRule(payload);
+      else await service.createReconciliationRule(payload);
+      await openBankRulesDialog(); showToast(payload.id ? "Regla actualizada." : "Regla guardada.");
     } catch (saveError) { error.textContent = saveError.message || "No se ha podido guardar la regla."; error.hidden = false; }
   });
+  document.querySelector("[data-rule-cancel]")?.addEventListener("click", () => openBankRulesDialog());
+  document.querySelectorAll("[data-rule-edit]").forEach((button) => button.addEventListener("click", () => openBankRulesDialog(button.dataset.ruleEdit)));
   document.querySelectorAll("[data-rule-toggle]").forEach((input) => input.addEventListener("change", async () => { try { await service.setReconciliationRuleActive(input.dataset.ruleToggle, input.checked); bankRules = await service.listReconciliationRules(); input.nextElementSibling.textContent = input.checked ? "Activa" : "Inactiva"; } catch (error) { input.checked = !input.checked; showToast(error.message); } }));
   document.querySelectorAll("[data-rule-delete]").forEach((button) => button.addEventListener("click", async () => { if (!window.confirm("¿Eliminar esta regla de conciliación?")) return; try { await service.deleteReconciliationRule(button.dataset.ruleDelete); bankRules = bankRules.filter((rule) => rule.id !== button.dataset.ruleDelete); await openBankRulesDialog(); showToast("Regla eliminada."); } catch (error) { showToast(error.message); } }));
 }
@@ -364,8 +372,8 @@ function openBankMovementDialog(movementId) {
 
 function bankAssignmentValue(item) {
   if (item.familyId) return `FAMILY:${item.familyId}`;
-  if (item.expenseId) return `EXPENSE:${item.expenseId}`;
   if (item.categoryName) return `CATEGORY:${item.categoryName}`;
+  if (item.expenseId) return `EXPENSE:${item.expenseId}`;
   return item.assignment ?? "";
 }
 
@@ -376,7 +384,7 @@ function bankAssignmentOptions(item, includeExpenses = false) {
     return data.families.filter((family) => family.active).map((family) => option(`FAMILY:${family.id}`, family.name)).join("");
   }
   const categories = data.expenseCategories.map((category) => option(`CATEGORY:${category.name}`, category.name)).join("");
-  const expenses = includeExpenses ? data.expenses.map((expense) => option(`EXPENSE:${expense.id}`, `${expense.concept} · ${formatMoney(expense.amountCents)}`)).join("") : "";
+  const expenses = includeExpenses ? data.expenses.filter((expense) => !expense.createdFromBank).map((expense) => option(`EXPENSE:${expense.id}`, `${expense.concept} · ${formatMoney(expense.amountCents)}`)).join("") : "";
   return `${categories}${expenses ? `<optgroup label="Gastos ya registrados">${expenses}</optgroup>` : ""}`;
 }
 
@@ -384,25 +392,41 @@ function bankAssignmentLabel(item) {
   const family = data.families.find((entry) => entry.id === item.familyId);
   const expense = data.expenses.find((entry) => entry.id === item.expenseId);
   if (family) return `Familia: ${family.name}`;
-  if (expense) return `Gasto: ${expense.concept}`;
   if (item.categoryName) return `Categoría: ${item.categoryName}`;
+  if (expense) return `Gasto: ${expense.concept}`;
   return "Sin asignar";
 }
 
 function renderBank() {
-  const summary = bankPreview ? `<section class="inline-summary"><div><span>Movimientos válidos</span><strong>${bankPreview.records.length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Filas a revisar</span><strong>${bankPreview.errors.length}</strong></div><div><span>Listos para importar</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div></section><section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización local</p><h3>Revisa antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.map((item) => `<article class="bank-preview-row${item.duplicate ? " is-duplicate" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)}${item.reference ? ` · ${escapeHtml(item.reference)}` : ""}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>${item.duplicate ? "Duplicado" : "Nuevo"}</span></article>`).join("")}${bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Error</span></article>`).join("")}</div></section>` : `<section class="panel bank-empty"><div class="page-actions"><label class="primary-button file-button">${icon("plus")} ${icon("excel")}<span class="sr-only">Añadir movimientos desde Excel</span><input type="file" accept=".xls,.xlsx,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" data-bank-file></label></div></section>`;
-  const movements = (data.bankMovements ?? []).slice(0, 30);
-  const pendingCount = movements.filter((item) => item.assignmentStatus === "PENDIENTE").length;
-  const history = `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Cuenta común</p><h3>Últimos movimientos</h3></div><span class="help-label">${pendingCount} pendientes de asignar</span></div><div class="bank-preview-list">${movements.length ? movements.map((item) => `<article class="bank-preview-row${item.assignmentStatus === "PENDIENTE" ? " is-error" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${escapeHtml(bankAssignmentLabel(item))}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong>${isAdministrator() ? `<button class="bank-review-button" type="button" data-edit-bank-movement="${escapeHtml(item.id)}">${item.assignmentStatus === "PENDIENTE" ? "Revisar" : "Editar"}</button>` : `<span>${item.assignmentStatus === "PENDIENTE" ? "Pendiente" : "Asignado"}</span>`}</article>`).join("") : `<div class="empty-list"><strong>Aún no hay movimientos importados.</strong><span>Selecciona un extracto para ver una previsualización.</span></div>`}</div></section>`;
-  const conciliation = bankPreview ? `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Conciliación</p><h3>Asigna cada movimiento antes de importar</h3></div></div><div class="bank-preview-list">${bankPreview.records.filter((item) => !item.duplicate).map((item, index) => `<article class="bank-preview-row"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${item.amountCents >= 0 ? "Ingreso" : "Gasto"}</small></div><select data-bank-assignment="${index}" aria-label="Asignación de ${escapeHtml(item.concept)}"><option value=""${bankAssignmentValue(item) ? "" : " selected"}>Sin asignar</option>${bankAssignmentOptions(item)}</select><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong></article>`).join("")}</div><div class="page-actions"><button class="primary-button" type="button" data-confirm-bank-import>Confirmar conciliación e importar</button></div></section>` : "";
-  return `${conciliation}${summary}${history}<aside class="info-note">${icon("bank")}<p><strong>Puedes corregir una asignación después de importar.</strong> Entra como administrador y pulsa Revisar o Editar en el movimiento.</p></aside>`;
+  const allMovements = data.bankMovements ?? [];
+  const pendingCount = allMovements.filter((item) => item.assignmentStatus === "PENDIENTE").length;
+  const movements = bankMovementFilter === "pending" ? allMovements.filter((item) => item.assignmentStatus === "PENDIENTE") : allMovements;
+  const summary = bankPreview ? `<section class="inline-summary"><div><span>Filas detectadas</span><strong>${bankPreview.records.length + bankPreview.errors.length}</strong></div><div><span>Nuevos</span><strong>${bankPreview.records.filter((item) => !item.duplicate).length}</strong></div><div><span>Duplicados</span><strong>${bankPreview.records.filter((item) => item.duplicate).length}</strong></div><div><span>Errores</span><strong>${bankPreview.errors.length}</strong></div></section>` : "";
+  const conciliationRows = bankPreview ? bankPreview.records.map((item, index) => item.duplicate
+    ? `<article class="bank-preview-row is-duplicate"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${item.duplicateReason === "existing" ? "Ya estaba importado" : "Repetido en este archivo"}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong><span>Duplicado</span></article>`
+    : `<article class="bank-preview-row"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${item.amountCents >= 0 ? "Ingreso" : "Gasto"}</small></div><select data-bank-assignment="${index}" aria-label="Asignación de ${escapeHtml(item.concept)}"><option value=""${bankAssignmentValue(item) ? "" : " selected"}>Sin asignar</option>${bankAssignmentOptions(item)}</select><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong></article>`).join("") : "";
+  const errorRows = bankPreview ? bankPreview.errors.map((item) => `<article class="bank-preview-row is-error"><div><strong>Fila ${item.rowNumber}</strong><small>${escapeHtml(item.message)}</small></div><span>Error</span></article>`).join("") : "";
+  const conciliation = bankPreview ? `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Previsualización y conciliación</p><h3>Revisa el extracto antes de guardarlo</h3></div></div>${summary}<div class="bank-preview-list">${conciliationRows}${errorRows}</div><div class="page-actions"><button class="secondary-button" type="button" data-cancel-bank-preview>Cancelar</button><button class="primary-button" type="button" data-confirm-bank-import${bankPreview.records.every((item) => item.duplicate) ? " disabled" : ""}>Confirmar conciliación e importar</button></div></section>` : "";
+  const history = `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Cuenta común</p><h3>Movimientos bancarios</h3></div>${isAdministrator() && pendingCount ? `<button class="secondary-button" type="button" data-apply-bank-rules>${icon("settings")} Aplicar reglas</button>` : ""}</div><div class="filter-chips" aria-label="Filtrar movimientos"><button class="filter-chip${bankMovementFilter === "pending" ? " is-active" : ""}" type="button" data-bank-filter="pending">Pendientes · ${pendingCount}</button><button class="filter-chip${bankMovementFilter === "all" ? " is-active" : ""}" type="button" data-bank-filter="all">Todos · ${allMovements.length}</button></div><div class="bank-preview-list">${movements.length ? movements.map((item) => `<article class="bank-preview-row${item.assignmentStatus === "PENDIENTE" ? " is-error" : ""}"><div><strong>${escapeHtml(item.concept)}</strong><small>${formatDate(item.date)} · ${escapeHtml(bankAssignmentLabel(item))}</small></div><strong>${item.amountCents >= 0 ? "+" : ""}${formatMoney(item.amountCents)}</strong>${isAdministrator() ? `<button class="bank-review-button" type="button" data-edit-bank-movement="${escapeHtml(item.id)}">${item.assignmentStatus === "PENDIENTE" ? "Revisar" : "Editar"}</button>` : `<span>${item.assignmentStatus === "PENDIENTE" ? "Pendiente" : "Asignado"}</span>`}</article>`).join("") : `<div class="empty-list"><strong>${bankMovementFilter === "pending" ? "No hay movimientos pendientes." : "Aún no hay movimientos importados."}</strong><span>${bankMovementFilter === "pending" ? "Todas las operaciones tienen destino." : "Añade un extracto para comenzar."}</span></div>`}</div></section>`;
+  const importHistory = isAdministrator() && (data.bankImportBatches ?? []).length ? `<section class="list-section"><div class="list-section__heading"><div><p class="section-kicker">Control de importaciones</p><h3>Histórico de extractos</h3></div></div><div class="import-history">${data.bankImportBatches.map((batch) => `<article><div><strong>${escapeHtml(batch.source)}</strong><small>${formatDate(String(batch.createdAt).slice(0, 10))} · ${batch.importedCount} nuevos · ${batch.duplicateCount} duplicados</small></div><button class="text-button danger-text" type="button" data-revert-bank-import="${escapeHtml(batch.id)}">Revertir</button></article>`).join("")}</div></section>` : "";
+  return `${conciliation}${history}${importHistory}<aside class="info-note">${icon("bank")}<p><strong>La conciliación actualiza las cuentas.</strong> Una familia recibe una aportación y una categoría crea el gasto correspondiente; después siempre puedes corregir la asignación.</p></aside>`;
 }
 
 async function createBankPreview(rows, source) {
   const normalized = normalizeBankRows(rows, { source });
   if (isAdministrator()) { try { bankRules = await service.listReconciliationRules(); } catch { bankRules = []; } }
-  const key = (value) => String(value ?? "").toLocaleUpperCase("es-ES").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, "");
-  bankPreview = { ...normalized, records: detectBankDuplicates(normalized.records, []).map((record) => { const rule = bankRules.find((item) => item.active && key(record.concept).includes(key(item.pattern))); return { ...record, assignment: rule?.familyId ? `FAMILY:${rule.familyId}` : rule?.categoryName ? `CATEGORY:${rule.categoryName}` : "" }; }) };
+  const key = (value) => String(value ?? "").trim().toLocaleLowerCase("es-ES").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const rules = [...bankRules].filter((rule) => rule.active).sort((a, b) => a.priority - b.priority || b.pattern.length - a.pattern.length);
+  bankPreview = { ...normalized, records: detectBankDuplicates(normalized.records, data.bankMovements ?? []).map((record) => {
+    const concept = key(record.concept);
+    const rule = rules.find((item) => {
+      const pattern = key(item.pattern);
+      const matches = item.matchType === "EXACT" ? concept === pattern : concept.includes(pattern);
+      const validTarget = record.amountCents > 0 ? Boolean(item.familyId) : Boolean(item.categoryName);
+      return matches && validTarget;
+    });
+    return { ...record, assignment: rule?.familyId ? `FAMILY:${rule.familyId}` : rule?.categoryName ? `CATEGORY:${rule.categoryName}` : "" };
+  }) };
   renderRoute();
 }
 
@@ -437,8 +461,11 @@ function rowsAfterBankHeader(rows) {
 function parseCsvFile(text) {
   const lines = text.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
   if (!lines.length) throw new Error("El archivo está vacío.");
-  const delimiter = lines[0].includes(";") ? ";" : ",";
-  return rowsAfterBankHeader(lines.map((line) => parseCsvLine(line, delimiter)));
+  for (const delimiter of [";", ",", "\t"]) {
+    try { return rowsAfterBankHeader(lines.map((line) => parseCsvLine(line, delimiter))); }
+    catch (error) { if (delimiter === "\t") throw error; }
+  }
+  return [];
 }
 
 async function parseBankFile(file) {
@@ -1184,6 +1211,40 @@ function bindInteractions() {
   document.querySelectorAll("[data-edit-expense]").forEach((button) => button.addEventListener("click", () => openExpenseDialog(button.dataset.editExpense)));
   document.querySelectorAll("[data-edit-assessment]").forEach((button) => button.addEventListener("click", () => openAssessmentDialog(button.dataset.editAssessment)));
   document.querySelectorAll("[data-edit-bank-movement]").forEach((button) => button.addEventListener("click", () => openBankMovementDialog(button.dataset.editBankMovement)));
+  document.querySelectorAll("[data-bank-filter]").forEach((button) => button.addEventListener("click", () => { bankMovementFilter = button.dataset.bankFilter; renderRoute(); }));
+  document.querySelector("[data-cancel-bank-preview]")?.addEventListener("click", () => { bankPreview = null; renderRoute(); });
+  document.querySelector("[data-apply-bank-rules]")?.addEventListener("click", async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "Aplicando…";
+    try {
+      const result = await service.applyReconciliationRules();
+      data = await service.getSnapshot();
+      renderRoute();
+      showToast(result.assigned ? `${result.assigned} movimientos asignados por las reglas.` : "No había coincidencias nuevas.");
+    } catch (error) {
+      console.error(error);
+      button.disabled = false;
+      button.textContent = "Aplicar reglas";
+      showToast("No hemos podido aplicar las reglas.");
+    }
+  });
+  document.querySelectorAll("[data-revert-bank-import]").forEach((button) => button.addEventListener("click", async () => {
+    if (!window.confirm("¿Revertir esta importación? Se eliminarán sus movimientos y las aportaciones o gastos creados automáticamente.")) return;
+    button.disabled = true;
+    button.textContent = "Revirtiendo…";
+    try {
+      const result = await service.revertBankImport(button.dataset.revertBankImport);
+      data = await service.getSnapshot();
+      renderRoute();
+      showToast(`Importación revertida: ${result.removed} movimientos eliminados.`);
+    } catch (error) {
+      console.error(error);
+      button.disabled = false;
+      button.textContent = "Revertir";
+      showToast("No se puede revertir mientras tenga gastos manuales enlazados.");
+    }
+  }));
   document.querySelector("[data-open-water]")?.addEventListener("click", () => openWaterDialog());
   document.querySelector("[data-open-water-settlement]")?.addEventListener("click", openWaterSettlementDialog);
   document.querySelectorAll("[data-water-history]").forEach((button) => button.addEventListener("click", () => openWaterHistoryDialog(button.dataset.waterHistory)));
@@ -1193,8 +1254,14 @@ function bindInteractions() {
   document.querySelector("[data-bank-file]")?.addEventListener("change", async (event) => {
     const file = event.currentTarget.files?.[0];
     if (!file) return;
+    const control = event.currentTarget;
+    const label = control.closest("label");
+    control.disabled = true;
+    label?.setAttribute("aria-busy", "true");
+    showToast("Analizando el extracto…");
     try { await createBankPreview(await parseBankFile(file), file.name); }
     catch (error) { showToast(error.message || "No hemos podido leer ese extracto."); }
+    finally { control.disabled = false; label?.removeAttribute("aria-busy"); }
   });
   document.querySelectorAll("[data-confirm-bank-import]").forEach((button) => button.addEventListener("click", async (event) => {
     if (!bankPreview) return;
@@ -1216,7 +1283,7 @@ function bindInteractions() {
     } catch (error) { button.disabled = false; button.textContent = "Confirmar importación"; showToast("No hemos podido importar el extracto. Comprueba que eres administrador."); }
   }));
   document.querySelectorAll("[data-bank-assignment]").forEach((select) => select.addEventListener("change", () => {
-    const record = bankPreview?.records.filter((item) => !item.duplicate)[Number(select.dataset.bankAssignment)];
+    const record = bankPreview?.records[Number(select.dataset.bankAssignment)];
     if (record) record.assignment = select.value;
   }));
 }

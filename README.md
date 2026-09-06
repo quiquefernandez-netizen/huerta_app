@@ -1,6 +1,6 @@
 # Panel de comunidad
 
-Prototipo navegable de una aplicación sencilla para gestionar una pequeña comunidad de propietarios. La interfaz está pensada para móvil, usa únicamente datos ficticios y evita el lenguaje y la densidad visual de un programa contable.
+Aplicación web para gestionar de forma sencilla una pequeña comunidad de propietarios. La interfaz está pensada para móvil y evita el lenguaje y la densidad visual de un programa contable.
 
 > El producto queda temporalmente sin nombre. El símbolo, la paleta y el estilo siguen siendo provisionales hasta la revisión creativa de Dani.
 
@@ -8,7 +8,7 @@ Prototipo navegable de una aplicación sencilla para gestionar una pequeña comu
 
 Decisión vigente de acceso: dos perfiles, Normal con contraseña compartida y Administrador con posibilidad de varias contraseñas, con consulta de toda la comunidad para ambos y borrado exclusivo de administración. El esquema, los datos demo y la función segura de acceso ya están desplegados en Supabase; faltan habilitar el acceso anónimo y crear las credenciales elegidas por la comunidad. Ver [acceso y permisos](docs/SECURITY.md).
 
-Esta primera iteración cubre solo la base visual de la **Fase 1**:
+El proyecto incluye la base funcional de la **Fase 1** y el flujo bancario principal de la **Fase 2**:
 
 - Dashboard con saldo, gastos, cuotas, próxima reunión y gráficos sencillos.
 - Familias con una cuenta clara de abonos, cargos y saldo a favor o pendiente.
@@ -24,8 +24,11 @@ Esta primera iteración cubre solo la base visual de la **Fase 1**:
 - Pantalla de acceso por contraseña, sesión recordable y cierre de sesión preparada para Supabase.
 - Esquema relacional, RLS, RPC, Edge Function y seed ficticio de Fase 1 desplegados en Supabase.
 - Auditoría automática preparada para altas, cambios y borrados relevantes.
+- Banco con importación manual XLS/XLSX/CSV, previsualización, duplicados, conciliación y movimientos pendientes.
+- Reglas de conciliación editables desde Administración, aplicables automáticamente en la previsualización y a operaciones ya importadas.
+- Histórico de importaciones con reversión segura y aportaciones/gastos vinculados a su movimiento bancario.
 
-Mientras `dataSource` siga en `demo`, los cambios realizados desde los formularios viven solo en memoria y se borran al recargar. El backend remoto ya contiene únicamente datos ficticios, pero el frontend no se activará hasta completar y probar los dos accesos. No se han implementado banco, conciliación, propuestas, votaciones, reuniones, actas ni documentos.
+El frontend local está conectado a Supabase mediante su clave publicable. Las contraseñas se validan en servidor y la sesión, no la contraseña, se conserva en el dispositivo cuando se solicita. Propuestas, votaciones, reuniones, actas y documentos siguen fuera del alcance actual.
 
 La apariencia se cambia desde el botón de perfil. La preferencia es local al navegador y no contiene datos personales. Los temas Plano y Aero están disponibles; Aero reinterpreta el cristal nocturno de Windows Vista sin reutilizar recursos del sistema operativo.
 
@@ -39,7 +42,7 @@ Supabase Auth + Data API
 Supabase PostgreSQL (fuente de verdad)
 ```
 
-No hay dependencias de producción ni proceso de compilación. El frontend puede publicarse directamente en GitHub Pages.
+No hay proceso de compilación. El frontend puede publicarse directamente en GitHub Pages; la lectura local de XLS/XLSX usa SheetJS.
 
 ## Ejecutar en local
 
@@ -66,19 +69,19 @@ Las pruebas cubren cálculos monetarios, saldos familiares, reparto exacto de de
 
 ```js
 globalThis.APP_CONFIG = {
-  dataSource: "demo",
+  dataSource: "supabase",
   supabaseUrl: "https://rdjcwroddkhmjtfocbdg.supabase.co",
   supabasePublishableKey: ""
 };
 ```
 
-Después de crear y probar los accesos, `dataSource` podrá cambiarse a `supabase`. La URL y la clave publicable ya están preparadas en la configuración pública del cliente; nunca deben añadirse claves secretas, `service_role`, contraseñas ni cadenas de conexión.
+La URL y la clave publicable son configuración pública del cliente. Nunca deben añadirse claves secretas, `service_role`, contraseñas ni cadenas de conexión.
 
 ## Activar Supabase
 
 La guía completa está en [supabase/README.md](supabase/README.md). En resumen: habilitar accesos anónimos, revisar y aplicar las migraciones, cargar `seed.sql` solo mientras se prueban datos ficticios, desplegar `unlock-access`, crear las credenciales iniciales fuera del repositorio y finalmente activar `dataSource: "supabase"` con la clave publicable.
 
-El backend remoto ya tiene las migraciones `001` a `010`, el seed ficticio y la función `unlock-access`. Los accesos anónimos están habilitados; todavía falta crear las dos contraseñas elegidas por la comunidad antes de activar el frontend.
+Las migraciones de Fase 1 y Banco están aplicadas en el proyecto enlazado. Los accesos anónimos, las credenciales compartidas y la función `unlock-access` se gestionan en Supabase sin exponer contraseñas en el repositorio.
 
 ## Publicar el frontend en GitHub Pages
 
@@ -93,7 +96,7 @@ El repositorio incluye `.github/workflows/pages.yml`, que ejecuta las pruebas y 
 
 ## Importar extractos
 
-La importación bancaria pertenece a la Fase 2 y **no está disponible**. El contrato previsto, incluyendo previsualización, duplicados e idempotencia, se documenta en [docs/BANK_IMPORT.md](docs/BANK_IMPORT.md).
+Entra con perfil Administrador, abre **Banco** y pulsa el botón superior **Añadir** (iconos `+` y Excel). Selecciona un `.xls`, `.xlsx` o `.csv`, revisa las asignaciones propuestas y confirma al final de la previsualización. Los movimientos quedan editables después y las reglas se gestionan desde **Administración → Reglas de conciliación**. Los detalles técnicos están en [docs/BANK_IMPORT.md](docs/BANK_IMPORT.md).
 
 ## Documentación
 

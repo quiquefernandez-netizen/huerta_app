@@ -99,7 +99,8 @@ Cada pago recibido es un registro independiente. Los totales mostrados por famil
 | id | TEXT PK | ID estable |
 | familia_id | TEXT FK | → FAMILIAS |
 | cuota_id | TEXT FK | → CUOTAS; opcional |
-| movimiento_bancario_id | TEXT FK | → MOVIMIENTOS; futuro |
+| movimiento_bancario_id | TEXT FK | → MOVIMIENTOS; opcional y único |
+| creada_desde_banco | BOOLEAN | Distingue aportaciones generadas por conciliación |
 | fecha | DATE | Fecha recibida |
 | importe_cents | INTEGER | Positivo |
 | tipo | ENUM | `ORDINARIA`, `EXTRAORDINARIA` |
@@ -128,7 +129,8 @@ Cada pago recibido es un registro independiente. Los totales mostrados por famil
 | categoria_id | TEXT FK | → CATEGORIAS |
 | proveedor | TEXT | Opcional |
 | origen_pago | ENUM | `CUENTA_COMUNIDAD`, `FAMILIAS` |
-| movimiento_bancario_id | TEXT FK | → MOVIMIENTOS; opcional |
+| movimiento_bancario_id | TEXT FK | → MOVIMIENTOS; opcional y único |
+| creado_desde_banco | BOOLEAN | Permite corregir/revertir solo gastos generados automáticamente |
 | documento_id | TEXT FK | → DOCUMENTOS; opcional |
 | notas | TEXT | Opcional |
 | creado_por_usuario_id | TEXT FK | → USUARIOS |

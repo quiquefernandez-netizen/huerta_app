@@ -198,6 +198,39 @@ test("la conciliación bancaria permite corregir familia, gasto o categoría", a
   });
 });
 
+test("el servicio demo materializa y corrige una conciliación bancaria", async () => {
+  const service = new DemoDataService();
+  const row = { date: "2026-09-05", valueDate: null, concept: "Aportación bancaria", amountCents: 3000, balanceCents: 9000, reference: "ABC", fingerprint: "mov_demo_test" };
+  const imported = await service.importBankMovements({ source: "extracto.xls", rows: [row] });
+  let snapshot = await service.getSnapshot();
+  const movement = snapshot.bankMovements.find((item) => item.fingerprint === row.fingerprint);
+  await service.assignBankMovement({ id: movement.id, familyId: "fam_roble" });
+  snapshot = await service.getSnapshot();
+  assert.equal(snapshot.contributions.filter((item) => item.bankMovementId === movement.id).length, 1);
+  await service.assignBankMovement({ id: movement.id });
+  snapshot = await service.getSnapshot();
+  assert.equal(snapshot.contributions.some((item) => item.bankMovementId === movement.id), false);
+  assert.equal(snapshot.bankMovements.find((item) => item.id === movement.id).assignmentStatus, "PENDIENTE");
+  assert.equal(imported.imported, 1);
+});
+
+test("el adaptador Supabase cubre edición, aplicación de reglas y reversión de lotes", async () => {
+  const calls = [];
+  const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
+    getAccessToken: async () => "jwt-demo",
+    fetchImpl: async (url, options) => { calls.push({ url, options }); return { ok: true, json: async () => ({ assigned: 2, removed: 3 }) }; }
+  });
+  await service.updateReconciliationRule({ id: "rule-1", pattern: "IBERDROLA", matchType: "CONTAINS", categoryName: "Electricidad", priority: 10 });
+  await service.applyReconciliationRules();
+  await service.revertBankImport("batch-1");
+  assert.deepEqual(calls.map((call) => call.url.split("/").at(-1)), ["update_reconciliation_rule", "apply_reconciliation_rules", "revert_bank_import"]);
+  assert.deepEqual(JSON.parse(calls[0].options.body), {
+    p_id: "rule-1", p_pattern: "IBERDROLA", p_match_type: "CONTAINS", p_family_id: null,
+    p_category_id: null, p_category_name: "Electricidad", p_priority: 10
+  });
+  assert.deepEqual(JSON.parse(calls[2].options.body), { p_batch_id: "batch-1" });
+});
+
 test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {
   const calls = [];
   const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {

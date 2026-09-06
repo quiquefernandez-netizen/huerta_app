@@ -17,6 +17,21 @@ test("el fingerprint incluye concepto y referencia, no solo fecha e importe", ()
   assert.notEqual(fingerprintBankMovement(base), fingerprintBankMovement({ ...base, reference: "B" }));
 });
 
+test("renombrar el mismo extracto no cambia la huella del movimiento", () => {
+  const row = { fecha: "05/09/2026", concepto: "Ingreso demo", importe: "10,00", saldo: "100,00", referencia: "ABC" };
+  const first = normalizeBankRow(row, { source: "extracto-agosto.xls" });
+  const renamed = normalizeBankRow(row, { source: "copia-extracto.xls" });
+  assert.equal(first.fingerprint, renamed.fingerprint);
+});
+
+test("detecta un movimiento antiguo aunque su fingerprint incluyera otro nombre de fichero", () => {
+  const current = normalizeBankRow({ fecha: "05/09/2026", concepto: "Ingreso demo", importe: "10,00", saldo: "100,00", referencia: "ABC" });
+  const legacy = { ...current, fingerprint: "mov_huella_antigua" };
+  const [result] = detectBankDuplicates([current], [legacy]);
+  assert.equal(result.duplicate, true);
+  assert.equal(result.duplicateReason, "existing");
+});
+
 test("detecta duplicados existentes y repetidos en el mismo lote", () => {
   const one = normalizeBankRow({ fecha: "2026-09-05", concepto: "Ingreso demo", importe: "10,00" });
   const two = normalizeBankRow({ fecha: "2026-09-06", concepto: "Salida demo", importe: "-3,20" });
@@ -35,4 +50,3 @@ test("rechaza filas incompletas y mantiene el resto del lote", () => {
   assert.equal(result.errors.length, 2);
   assert.deepEqual(result.errors.map((error) => error.rowNumber), [2, 3]);
 });
-

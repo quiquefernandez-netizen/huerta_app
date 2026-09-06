@@ -25,19 +25,19 @@ El lector localiza la fila cuyo primer encabezado funcional es `Fecha de operaci
 
 ## Duplicados e idempotencia
 
-El fingerprint no usará solo fecha e importe. Combinará, tras normalización, al menos fecha, importe, referencia cuando exista, concepto, saldo y una identificación del origen/formato. El texto canónico usado para calcular el hash deberá poder auditarse sin guardar datos adicionales innecesarios.
+El fingerprint no usa solo fecha e importe. Combina, tras normalización, fecha, fecha de valor, importe, referencia, concepto y saldo. El nombre del fichero queda fuera de la huella: renombrar un mismo extracto no debe crear movimientos nuevos. Supabase repite la comprobación por esos campos antes de insertar, por lo que la idempotencia no depende únicamente del navegador.
 
 Reimportar el mismo fichero debe producir cero movimientos nuevos y mostrar los duplicados antes de confirmar.
 
 ## Reversión
 
-Cada lote se guardará en `IMPORTACIONES`; cada movimiento tendrá `import_batch_id`. Revertir exigirá rol administrador, confirmación, comprobación de dependencias y registro en `AUDITORIA`. No se borrarán silenciosamente gastos o aportaciones asociados.
+Cada lote se guarda en `import_batches`; cada movimiento conserva su `import_batch_id`. Administración puede consultar el histórico y revertir un lote tras una confirmación explícita. Se eliminan únicamente las aportaciones o gastos creados automáticamente por ese lote. Si un movimiento está enlazado a un gasto manual, la reversión se bloquea hasta corregir esa asignación.
 
 ## Conciliación
 
-Las reglas son deterministas, ordenadas por prioridad y revisables desde Administración. Antes de importar, cada ingreso puede asignarse a una familia y cada salida a una categoría de gasto. Después de importar, administración puede pulsar `Revisar` o `Editar` para cambiar el destino, enlazar una salida con un gasto ya registrado o devolver el movimiento a pendiente. Las correcciones quedan validadas en Supabase y no dependen del JavaScript público.
+Las reglas son deterministas, ordenadas por prioridad y revisables desde Administración. Admiten coincidencia «contiene» o «exacta», pueden activarse, desactivarse, editarse y borrarse. Antes de importar, cada ingreso puede asignarse a una familia y cada salida a una categoría de gasto. Después de importar, administración puede pulsar `Revisar` o `Editar` para cambiar el destino, enlazar una salida con un gasto ya registrado o devolver el movimiento a pendiente.
 
-Crear automáticamente aportaciones o gastos a partir de la conciliación, recordar una decisión nueva desde el propio movimiento y revertir lotes completos siguen pendientes de incrementos posteriores de Fase 2.
+Confirmar una asignación crea o actualiza de forma idempotente la aportación o el gasto vinculado. Cambiar el destino elimina únicamente el registro generado por la conciliación anterior y crea el correcto; el movimiento nunca se duplica. También se pueden aplicar las reglas guardadas a todos los movimientos pendientes.
 
 ## Pruebas mínimas de Fase 2
 
