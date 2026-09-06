@@ -58,7 +58,7 @@ export class DemoDataService {
 
   async createProposal(proposal) {
     await delay(220);
-    const created = { ...clone(proposal), id: `prop_demo_${crypto.randomUUID()}`, status: "IDEA", budgets: [] };
+    const created = { ...clone(proposal), id: `prop_demo_${crypto.randomUUID()}`, status: "IDEA", budgets: [], voting: null };
     this.data.proposals = [created, ...(this.data.proposals ?? [])];
     return clone(created);
   }
@@ -96,6 +96,32 @@ export class DemoDataService {
       if (proposal.budgets.length < before) return true;
     }
     throw new Error("El presupuesto no existe.");
+  }
+
+  async setProposalVotingStatus(proposalId, status) {
+    await delay(180);
+    const proposal = (this.data.proposals ?? []).find((item) => item.id === proposalId);
+    if (!proposal) throw new Error("La propuesta no existe.");
+    if (!proposal.voting) {
+      if (status !== "ABIERTA") throw new Error("Primero hay que abrir la votación.");
+      proposal.voting = { id: `vot_demo_${crypto.randomUUID()}`, status: "ABIERTA", openedAt: new Date().toISOString(), closedAt: null, votes: [] };
+      proposal.status = "PENDIENTE_VOTACION";
+    } else if (proposal.voting.status === "CERRADA") throw new Error("La votación ya está cerrada.");
+    else if (status === "CERRADA") Object.assign(proposal.voting, { status: "CERRADA", closedAt: new Date().toISOString() });
+    return clone(proposal.voting);
+  }
+
+  async castProposalVote(proposalId, familyId, vote) {
+    await delay(160);
+    const proposal = (this.data.proposals ?? []).find((item) => item.id === proposalId);
+    if (!proposal?.voting || proposal.voting.status !== "ABIERTA") throw new Error("La votación no está abierta.");
+    if (!this.data.families.some((family) => family.id === familyId && family.active)) throw new Error("La familia no existe o está inactiva.");
+    const votes = proposal.voting.votes ?? [];
+    const saved = { familyId, familyName: this.data.families.find((family) => family.id === familyId).name, vote, date: new Date().toISOString() };
+    const index = votes.findIndex((item) => item.familyId === familyId);
+    if (index >= 0) votes[index] = saved; else votes.push(saved);
+    proposal.voting.votes = votes;
+    return clone(saved);
   }
 
   async updateAssessment(assessment) {
@@ -475,6 +501,10 @@ export class SupabaseDataService {
   }
 
   deleteProposalBudget(id) { return this.rpc("delete_proposal_budget", { p_id: id }); }
+
+  setProposalVotingStatus(proposalId, status) { return this.rpc("set_proposal_voting_status", { p_proposal_id: proposalId, p_status: status }); }
+
+  castProposalVote(proposalId, familyId, vote) { return this.rpc("cast_proposal_vote", { p_proposal_id: proposalId, p_family_id: familyId, p_vote: vote }); }
 }
 
 export function createDataService(config = globalThis.APP_CONFIG) {

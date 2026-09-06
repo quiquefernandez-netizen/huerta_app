@@ -241,6 +241,19 @@ test("la demo admite varias ofertas dentro de una propuesta", async () => {
   assert.deepEqual(saved.budgets.map((item) => item.amountCents), [10000, 12000]);
 });
 
+test("la demo conserva un voto por familia y permite cambiarlo mientras está abierto", async () => {
+  const service = new DemoDataService();
+  await service.setProposalVotingStatus("prop_demo_1", "ABIERTA");
+  await service.castProposalVote("prop_demo_1", "fam_roble", "FAVOR");
+  await service.castProposalVote("prop_demo_1", "fam_roble", "ABSTENCION");
+  const proposal = (await service.getSnapshot()).proposals.find((item) => item.id === "prop_demo_1");
+  assert.equal(proposal.status, "PENDIENTE_VOTACION");
+  assert.equal(proposal.voting.votes.length, 1);
+  assert.equal(proposal.voting.votes[0].vote, "ABSTENCION");
+  await service.setProposalVotingStatus("prop_demo_1", "CERRADA");
+  await assert.rejects(() => service.castProposalVote("prop_demo_1", "fam_olivo", "FAVOR"), /no está abierta/i);
+});
+
 test("Supabase carga propuestas y usa RPC protegidas para propuesta y presupuesto", async () => {
   const calls = [];
   const service = new SupabaseDataService("https://demo.supabase.co", "sb_publishable_demo", {
@@ -250,10 +263,14 @@ test("Supabase carga propuestas y usa RPC protegidas para propuesta y presupuest
   const snapshot = await service.getSnapshot();
   await service.createProposal({ title: "Idea", description: "Descripción", date: "2026-09-06", estimatedBudgetCents: 10000, notes: "" });
   await service.createProposalBudget({ proposalId: "prop-1", provider: "Proveedor", amountCents: 9500, description: "Oferta", date: "2026-09-06", notes: "" });
+  await service.setProposalVotingStatus("prop-1", "ABIERTA");
+  await service.castProposalVote("prop-1", "fam-1", "FAVOR");
   assert.deepEqual(snapshot.proposals, []);
   assert.ok(calls.some((call) => call.url.endsWith("/rpc/list_proposals")));
   assert.ok(calls.some((call) => call.url.endsWith("/rpc/create_proposal")));
   assert.ok(calls.some((call) => call.url.endsWith("/rpc/create_proposal_budget")));
+  assert.ok(calls.some((call) => call.url.endsWith("/rpc/set_proposal_voting_status")));
+  assert.ok(calls.some((call) => call.url.endsWith("/rpc/cast_proposal_vote")));
 });
 
 test("el adaptador Supabase normaliza el alta de familia para la función SQL", async () => {

@@ -14,6 +14,7 @@
   --muted: #69756f;
   --canvas: #f5f3ec;
   --surface: #ffffff;
+  --surface-soft: #f8f7f2;
   --line: #e2e1d9;
   --clay: #bd654d;
   --clay-soft: #f5e5df;
@@ -37,6 +38,7 @@
   --muted: #a9bfd1;
   --canvas: #07111f;
   --surface: rgba(13, 31, 51, 0.78);
+  --surface-soft: rgba(28, 55, 80, 0.58);
   --line: rgba(194, 226, 255, 0.22);
   --clay: #c46aa8;
   --clay-soft: rgba(212, 104, 182, 0.16);

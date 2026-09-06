@@ -122,6 +122,23 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .proposal-budget-list strong, .proposal-budget-list small { display: block; }
 .proposal-budget-list small { margin-top: 3px; color: var(--muted); font-size: .7rem; }
 .proposal-budget-list b { white-space: nowrap; }
+.proposal-voting { margin-top: 22px; padding-top: 2px; border-top: 1px solid var(--line); }
+.vote-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.vote-summary div { padding: 11px; border-radius: 12px; background: var(--surface-soft); text-align: center; }
+.vote-summary strong, .vote-summary span { display: block; }
+.vote-summary strong { font-family: var(--font-display); font-size: 1.25rem; }
+.vote-summary span { margin-top: 2px; color: var(--muted); font-size: .68rem; }
+.family-vote-list { display: grid; gap: 0; margin: 12px 0 0; padding: 0; border: 1px solid var(--line); border-radius: 12px; list-style: none; }
+.family-vote-list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--line); font-size: .75rem; }
+.family-vote-list li:first-child { border-top: 0; }
+.family-vote-list .has-not-voted { color: var(--muted); font-weight: 600; }
+.family-vote-list .has-voted { color: var(--forest-700); }
+.voting-form { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: 10px; margin-top: 14px; }
+.voting-form label { display: grid; gap: 5px; color: var(--muted); font-size: .7rem; font-weight: 700; }
+.voting-form select { min-height: 44px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); }
+.voting-form .form-error { grid-column: 1 / -1; margin: 0; }
+.voting-disclaimer { display: block; margin-top: 11px; color: var(--muted); font-size: .66rem; line-height: 1.45; }
+.voting-closed { margin: 12px 0 0 !important; padding: 11px 12px; border-radius: 11px; background: var(--surface-soft); color: var(--muted); font-size: .74rem; }
 .bank-preview-row.is-duplicate { opacity: .68; background: #f7f0e5; }
 .bank-preview-row.is-error { background: #fae5df; }
 .loading-state { display: flex; min-height: 45vh; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
@@ -563,6 +580,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .water-history { padding: 19px 18px 22px; }
   .dialog-section-heading { align-items: stretch; flex-direction: column; }
   .dialog-section-heading .secondary-button { width: 100%; }
+  .voting-form { grid-template-columns: 1fr; }
+  .voting-form .primary-button { width: 100%; }
   .form-row { grid-template-columns: 1fr; }
   .choice-options { grid-template-columns: 1fr; }
   .payer-row { grid-template-columns: 1fr 115px; }

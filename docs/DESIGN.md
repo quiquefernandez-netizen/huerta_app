@@ -90,6 +90,8 @@ Agua presenta el consumo acumulado desde la última liquidación. «Liquidar agu
 
 Propuestas usa tarjetas breves con estado, fecha y referencia económica. Al abrir una propuesta se ve la explicación completa y una comparación sencilla de todos sus presupuestos, ordenados por importe, sin convertir la pantalla en una tabla empresarial.
 
+La votación vive dentro del detalle de la propuesta: resume el resultado, muestra la situación de cada familia y pide elegir la familia de forma explícita antes de guardar. Administración abre y cierra la votación; mientras esté abierta, una familia puede corregir su decisión.
+
 Gastos pregunta de forma explícita si pagó la cuenta común o una o varias familias. Si pagaron familias, permite detallar cuánto adelantó cada una y valida que la suma coincida. Derramas es una acción separada: se eligen participantes y se muestra el reparto antes de confirmar.
 
 ## Pendientes de diseño

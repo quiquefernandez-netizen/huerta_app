@@ -269,7 +269,7 @@ Implementada como `presupuestos_propuesta`: `id`, `proposal_id`, `provider`, `am
 
 ### VOTACIONES
 
-`id`, `propuesta_id`, `familia_id`, `voto`, `fecha`, `estado`; restricción lógica única por `propuesta_id + familia_id`.
+Implementadas mediante dos tablas. `votaciones`: `id`, `proposal_id` único, `status` (`ABIERTA`/`CERRADA`), apertura y cierre con usuario y fecha. `votos`: `id`, `voting_id`, `family_id`, `vote` (`FAVOR`/`CONTRA`/`ABSTENCION`), usuario y fechas. La combinación `voting_id + family_id` es única y permite cambiar la decisión mientras la votación está abierta. Como el acceso es compartido, la familia se elige siempre de forma explícita y no se deduce de la sesión.
 
 ### REUNIONES
 

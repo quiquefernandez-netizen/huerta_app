@@ -50,11 +50,11 @@ export const demoData = Object.freeze({
     { id: "der_001", date: "2026-07-15", concept: "Mejora del cierre exterior", totalAmountCents: 30000, status: "ACTIVA", allocations: [{ familyId: "fam_roble", amountCents: 10000 }, { familyId: "fam_pino", amountCents: 10000 }, { familyId: "fam_almendro", amountCents: 10000 }], notes: "Derrama ficticia acordada solo por tres familias." }
   ],
   proposals: [
-    { id: "prop_demo_1", title: "Mejorar la iluminación de la entrada", description: "Valorar una iluminación más eficiente y agradable para el acceso común.", date: "2026-08-20", estimatedBudgetCents: 85000, status: "EN_ESTUDIO", notes: "", budgets: [
+    { id: "prop_demo_1", title: "Mejorar la iluminación de la entrada", description: "Valorar una iluminación más eficiente y agradable para el acceso común.", date: "2026-08-20", estimatedBudgetCents: 85000, status: "EN_ESTUDIO", notes: "", voting: null, budgets: [
       { id: "pre_demo_1", provider: "Electricidad Ejemplo", amountCents: 79500, description: "Luminarias LED e instalación", date: "2026-08-28", notes: "Presupuesto ficticio." },
       { id: "pre_demo_2", provider: "Servicios Luz Demo", amountCents: 91000, description: "Instalación completa", date: "2026-08-30", notes: "Presupuesto ficticio." }
     ] },
-    { id: "prop_demo_2", title: "Zona común con más sombra", description: "Estudiar una solución sencilla de sombra para los meses de verano.", date: "2026-09-01", estimatedBudgetCents: null, status: "IDEA", notes: "", budgets: [] }
+    { id: "prop_demo_2", title: "Zona común con más sombra", description: "Estudiar una solución sencilla de sombra para los meses de verano.", date: "2026-09-01", estimatedBudgetCents: null, status: "IDEA", notes: "", voting: null, budgets: [] }
   ],
   expenseCategories: [
     { name: "Agua general", amountCents: 46000, color: "#3f7f8b" },

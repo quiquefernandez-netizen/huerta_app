@@ -56,6 +56,10 @@ test("Propuestas está disponible con varios presupuestos y formularios responsi
   assert.match(source, /proposal\.budgets/);
   assert.match(styles, /\.proposal-grid/);
   assert.match(styles, /@media \(max-width: 760px\)[\s\S]*?\.proposal-grid \{ grid-template-columns: 1fr/);
+  assert.match(source, /id="proposal-vote-form"/);
+  assert.match(source, /Elige tu familia/);
+  assert.match(source, /data-set-proposal-voting="CERRADA"/);
+  assert.match(styles, /\.vote-summary/);
 });
 
 test("la interfaz deja al perfil normal registrar y reserva la administración", async () => {

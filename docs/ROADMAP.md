@@ -48,7 +48,7 @@ El flujo principal está completado: importación XLS/XLSX/CSV, previsualizació
 
 ## Fase 3 — vida comunitaria
 
-Completado el primer incremento: propuestas con estados, presupuesto estimado y varios presupuestos comparables. Ambos perfiles pueden consultar y crear; Administración puede corregir o eliminar. Pendiente: votaciones, reuniones, orden del día, actas y referencias documentales.
+Completados propuestas, presupuestos y votaciones internas: varios presupuestos comparables, apertura/cierre administrativo, una decisión por familia y cambio de voto mientras esté abierta. La familia se elige explícitamente porque el acceso compartido no identifica a una familia. Pendiente: reuniones, orden del día, actas y referencias documentales.
 
 ## Fase 4 — solo tras estabilizar lo anterior
 
